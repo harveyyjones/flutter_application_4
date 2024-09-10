@@ -1,34 +1,40 @@
 import 'dart:convert';
-import 'service_for_orders.dart';
+
 
 class CartItem {
   final int id;
   final String image;
+  final String categoryName;
   final String name;
   final String barcode;
   final String price;
   final String qty;
-  bool isApproved = false;  // Add this field
+  final String max;
+  bool isApproved = false;
 
   CartItem({
     required this.id,
     required this.image,
+    required this.categoryName,
     required this.name,
     required this.barcode,
     required this.price,
     required this.qty,
-    this.isApproved = false,  // Initialize with default value
+    required this.max,
+    this.isApproved = false,
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      id: json['id'],
-      image: json['image'],
-      name: json['name'],
-      barcode: json['barcode'],
-      price: json['price'],
-      qty: json['qty'],
-      isApproved: json['isApproved'] ?? false,  // Handle the field if present in JSON
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      image: json['image'].toString(),
+      categoryName: json['category_name'].toString(),
+      name: json['name'].toString(),
+      barcode: json['barcode'].toString(),
+      price: json['price'].toString(),
+      qty: json['qty'].toString(),
+      max: json['max'].toString(),
+      isApproved: json['isApproved'] as bool? ?? false,
     );
   }
 
@@ -36,11 +42,13 @@ class CartItem {
     return {
       'id': id,
       'image': image,
+      'category_name': categoryName,
       'name': name,
       'barcode': barcode,
       'price': price,
       'qty': qty,
-      'isApproved': isApproved,  // Add the field to JSON serialization
+      'max': max,
+      'isApproved': isApproved,
     };
   }
 }
@@ -130,8 +138,14 @@ class Order {
   }
 }
 
-// Add a method to fetch orders using the OrderService
+// Modify the fetchOrders function
 Future<List<Order>> fetchOrders() async {
-  final orderService = OrderService();
-  return await orderService.fetchOrders();
+  try {
+    final orders = await fetchOrders();
+    // Convert the returned orders to the correct type if necessary
+    return orders.map((order) => Order.fromJson(order.toJson())).toList();
+  } catch (e) {
+    print('Error fetching orders: $e');
+    rethrow;
+  }
 }

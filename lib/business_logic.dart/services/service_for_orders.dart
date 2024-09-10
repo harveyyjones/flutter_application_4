@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'package:flutter_application_4/business_logic.dart/models/order_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'order_model.dart';
 
 class OrderService {
   final String _baseUrl = 'https://gardeniakosmetyka.com/api/v1/order/getOrders';

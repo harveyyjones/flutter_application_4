@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'user_model.dart';
+import '../models/user_model.dart';
 
 class AuthService {
   static const String _baseUrl = 'https://gardeniakosmetyka.com/api/v1';
@@ -18,6 +18,7 @@ class AuthService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         await _saveAuthData(data);
+        print('Login successful. Token: ${data['access_token']}');
         return data;
       } else {
         throw Exception('Failed to login: ${response.body}');
@@ -32,6 +33,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_tokenKey, data['access_token']);
       await prefs.setString(_userKey, json.encode(data['user']));
+      print('Auth data saved. Token: ${data['access_token']}');
     } catch (e) {
       throw Exception('Unable to save auth data: $e');
     }
@@ -40,7 +42,14 @@ class AuthService {
   Future<bool> isLoggedIn() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.containsKey(_tokenKey);
+      final isLoggedIn = prefs.containsKey(_tokenKey);
+      if (isLoggedIn) {
+        final token = prefs.getString(_tokenKey);
+        print('User is logged in. Token: $token');
+      } else {
+        print('User is not logged in.');
+      }
+      return isLoggedIn;
     } catch (e) {
       print('Error checking login status: $e');
       return false;
@@ -49,17 +58,21 @@ class AuthService {
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    final token = prefs.getString(_tokenKey);
+    print('Retrieved token: $token');
+    return token;
   }
 
   Future<void> setToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
+    print('Token set: $token');
   }
 
   Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
+    print('Token cleared');
   }
 
   Future<UserModel?> getUser() async {
@@ -75,8 +88,10 @@ class AuthService {
   Future<void> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_tokenKey);
       await prefs.remove(_tokenKey);
       await prefs.remove(_userKey);
+      print('Logout successful. Cleared token: $token');
     } catch (e) {
       throw Exception('Unable to logout: $e');
     }

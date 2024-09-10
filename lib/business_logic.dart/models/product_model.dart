@@ -1,10 +1,12 @@
+import 'dart:ffi';
+
 class Product {
   final int id;
   final String image;
   final String name;
   final String barcode;
   final String price;
-  final String qty;
+   var qty;
 
   Product({
     required this.id,
@@ -31,14 +33,14 @@ class CartItem {
   final String barcode;
   final String name;
   final String image;
-  int quantity; // Add this line
+  var  quantity; // Add this line
   bool isApproved;
 
   CartItem({
     required this.barcode,
     required this.name,
     required this.image,
-    this.quantity = 1, // Add this line with a default value
+    required this.quantity, // Add this line with a default value
     this.isApproved = false,
   });
 
@@ -47,7 +49,7 @@ class CartItem {
   }) : barcode = product.barcode,
        name = product.name,
        image = product.image,
-       quantity = 1,
+       quantity = product.qty,
        isApproved = false;
 
   // Convert CartItem to a Map
@@ -66,7 +68,7 @@ class CartItem {
     String? barcode,
     String? name,
     String? image,
-    int? quantity,
+    var quantity,
     bool? isApproved,
   }) {
     return CartItem(

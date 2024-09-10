@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_4/business_logic.dart/order_model.dart';
-import 'package:flutter_application_4/business_logic.dart/product_model.dart' as product;
+import 'package:flutter_application_4/business_logic.dart/models/order_model.dart';
+import 'package:flutter_application_4/business_logic.dart/models/product_model.dart' as product;
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_application_4/business_logic.dart/order_model.dart' as order;
+import 'package:flutter_application_4/business_logic.dart/models/order_model.dart' as order;
 import 'package:flutter_application_4/business_logic.dart/printer_connection.dart'; // Add this import
 
 class OrderDetailsScreen extends StatefulWidget {
@@ -82,33 +82,46 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     }
   }
 
-  void _showCustomerDetails() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Customer Details"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Order ID: ${widget.order.id}"), // Add this line
-              Text("Name: ${widget.order.orderUser}"),
-              // TODO: Add more customer details if available
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: const Text("Close"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // Future<void> _showCustomerDetails() async {
+  //   try {
+  //     final orderDetails = await _customerDetailsService.fetchCustomerDetails(widget.order.id.toString());
+      
+  //     if (!mounted) return;
+
+  //     showDialog(
+  //       context: context,
+  //       builder: (BuildContext context) {
+  //         return AlertDialog(
+  //           title: const Text("Customer Details"),
+  //           content: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Text("Order ID: ${orderDetails.orderId}"),
+  //               Text("Name: ${orderDetails.customerName}"),
+  //               Text("Email: ${orderDetails.customerEmail}"),
+  //               Text("Phone: ${orderDetails.customerPhone}"),
+  //               Text("Order Status: ${orderDetails.orderStatus}"),
+  //               Text("Order Total: \$${orderDetails.orderTotal.toStringAsFixed(2)}"),
+  //             ],
+  //           ),
+  //           actions: [
+  //             TextButton(
+  //               child: const Text("Close"),
+  //               onPressed: () {
+  //                 Navigator.of(context).pop();
+  //               },
+  //             ),
+  //           ],
+  //         );
+  //       },
+  //     );
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Error fetching customer details: $e")),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -116,13 +129,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     Map<String, product.CartItem> groupedProducts = {};
     for (var item in _products) {
       if (groupedProducts.containsKey(item.barcode)) {
-        groupedProducts[item.barcode]!.quantity += 1; // Change this line
+        groupedProducts[item.barcode]!.quantity += item.qty; // Update this line
       } else {
         groupedProducts[item.barcode] = product.CartItem(
           barcode: item.barcode,
           name: item.name,
           image: item.image,
-          quantity: 1, // Change this line
+          quantity: item.qty, // Update this line
           isApproved: item.isApproved,
         );
       }
@@ -145,7 +158,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 ),
               ),
               title: Text(product.name),
-              subtitle: Text("Barcode: ${product.barcode}\nOrders: ${product.quantity}"), // Update this line
+              subtitle: Text("Barcode: ${product.barcode}\nQuantity: ${product.quantity}"), // Update this line
               tileColor: product.isApproved ? Colors.green.withOpacity(0.3) : null, // Highlight approved items
               trailing: product.isApproved
                   ? null
@@ -170,11 +183,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   child: Text(value),
                 );
               }).toList(),
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: _showCustomerDetails,
-            child: const Text("Show Customer Details"),
           ),
           const SizedBox(height: 10),
           ElevatedButton(
