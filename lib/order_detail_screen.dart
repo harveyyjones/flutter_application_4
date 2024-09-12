@@ -76,9 +76,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
 
     if (pickedFile != null) {
+      print('Image picked: ${pickedFile.path}');
+      print('Image name: ${pickedFile.name}');
+      print('Image size: ${await File(pickedFile.path).length()} bytes');
+      
       setState(() {
         _imageFile = pickedFile;
       });
+    } else {
+      print('No image selected.');
     }
   }
 

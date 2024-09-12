@@ -17,6 +17,7 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
+        print('Full response: ${response.body}'); // Add this line to print the full response
         await _saveAuthData(data);
         print('Login successful. Token: ${data['access_token']}');
         return data;

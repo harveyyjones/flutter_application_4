@@ -1,9 +1,18 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_4/business_logic.dart/models/order_model.dart';
 import 'package:flutter_application_4/business_logic.dart/services/service_for_orders.dart';
 import 'package:flutter_application_4/order_detail_screen.dart';
+// Add this import
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+// Add this import
+import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -55,6 +64,79 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      print('Image picked: ${pickedFile.path}');
+      print('Image name: ${pickedFile.name}');
+      print('Image size: ${await File(pickedFile.path).length()} bytes');
+      
+      setState(() {
+      });
+      await _sendImageToApi(pickedFile);
+    } else {
+      print('No image selected.');
+    }
+  }
+
+  Future<void> _sendImageToApi(XFile imageFile) async {
+    // Update the URL to remove the trailing slash
+    final url = Uri.parse('https://gardeniakosmetyka.com/public/api/v1/image-upload');
+    
+    final request = http.MultipartRequest('POST', url);
+
+    // Retrieve the token from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+    print('Token: $token');
+
+    if (token == null) {
+      throw Exception('Authentication token not found');
+    }
+
+    // Add the authorization token to the request headers
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // Add the image file to the request
+    request.files.add(await http.MultipartFile.fromPath(
+      'image',
+      imageFile.path,
+      filename: imageFile.name,
+    ));
+
+    try {
+      // Use a regular http client to handle redirects automatically
+      final client = http.Client();
+      final streamedResponse = await client.send(request);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        print('Image uploaded successfully');
+        print('Response: ${response.body}');
+        // Show a success message to the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Image uploaded successfully')),
+        );
+      } else {
+        print('Failed to upload image. Status code: ${response.statusCode}');
+        print('Error response: ${response.body}');
+        // Show an error message to the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image. Please try again later.')),
+        );
+      }
+      client.close();
+    } catch (e) {
+      print('Error uploading image: $e');
+      // Show an error message to the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred while uploading the image. Please try again.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -62,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
         appBar: AppBar(
           title: Text('Orders'),
         ),
-        body: Center(
+        body: const Center(
           child: CircularProgressIndicator(),
         ),
       );
@@ -101,36 +183,36 @@ class _HomeScreenState extends State<HomeScreen> {
                             _selectedOrderStatus = value;
                           });
                         },
-                        items: [
-                          DropdownMenuItem<int>(child: Text('All'), value: null),
-                          DropdownMenuItem<int>(child: Text('Onay Bekliyor'), value: 0),
-                          DropdownMenuItem<int>(child: Text('Siparişi Hazırlayınız'), value: 1),
-                          DropdownMenuItem<int>(child: Text('Depoda Hazırlanıyor'), value: 2),
-                          DropdownMenuItem<int>(child: Text('Tamamlandı'), value: 3),
-                          DropdownMenuItem<int>(child: Text('Iptal Edildi'), value: 4),
+                        items: const [
+                          DropdownMenuItem<int>(value: null, child: Text('All')),
+                          DropdownMenuItem<int>(value: 0, child: Text('Onay Bekliyor')),
+                          DropdownMenuItem<int>(value: 1, child: Text('Siparişi Hazırlayınız')),
+                          DropdownMenuItem<int>(value: 2, child: Text('Depoda Hazırlanıyor')),
+                          DropdownMenuItem<int>(value: 3, child: Text('Tamamlandı')),
+                          DropdownMenuItem<int>(value: 4, child: Text('Iptal Edildi')),
                         ],
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: DropdownButton<int>(
                         value: _selectedPaymentStatus,
-                        hint: Text('Payment Status'),
+                        hint: const Text('Payment Status'),
                         isExpanded: true,
                         onChanged: (value) {
                           setState(() {
                             _selectedPaymentStatus = value;
                           });
                         },
-                        items: [
-                          DropdownMenuItem<int>(child: Text('All'), value: null),
-                          DropdownMenuItem<int>(child: Text('Bekliyor'), value: 0),
-                          DropdownMenuItem<int>(child: Text('Ödendi'), value: 1),
-                          DropdownMenuItem<int>(child: Text('Tamamlandı'), value: 2),
+                        items: const [
+                          DropdownMenuItem<int>(value: null, child: Text('All')),
+                          DropdownMenuItem<int>(value: 0, child: Text('Bekliyor')),
+                          DropdownMenuItem<int>(value: 1, child: Text('Ödendi')),
+                          DropdownMenuItem<int>(value: 2, child: Text('Tamamlandı')),
                         ],
                       ),
                     ),
@@ -140,6 +222,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ElevatedButton(
                   onPressed: _applyFilters,
                   child: Text('Apply Filters'),
+                ),
+                ElevatedButton(
+                  onPressed: _pickImage,
+                  child: const Text("Send Picture"),
                 ),
               ],
             ),
