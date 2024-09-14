@@ -218,15 +218,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _applyFilters,
-                  child: Text('Apply Filters'),
-                ),
-                ElevatedButton(
-                  onPressed: _pickImage,
-                  child: const Text("Send Picture"),
-                ),
+                // SizedBox(height: 8),
+                // ElevatedButton(
+                //   onPressed: _applyFilters,
+                //   child: Text('Apply Filters'),
+                // ),
+                // ElevatedButton(
+                //   onPressed: _pickImage,
+                //   child: const Text("Send Picture"),
+                // ),
               ],
             ),
           ),

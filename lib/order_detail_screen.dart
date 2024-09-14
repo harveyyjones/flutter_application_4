@@ -7,25 +7,47 @@ import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_application_4/business_logic.dart/models/order_model.dart' as order;
 import 'package:flutter_application_4/business_logic.dart/printer_connection.dart'; // Add this import
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_application_4/business_logic.dart/services/auth_service.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   final Order order;
 
-  OrderDetailsScreen({required this.order});
+  const OrderDetailsScreen({Key? key, required this.order}) : super(key: key);
 
   @override
   _OrderDetailsScreenState createState() => _OrderDetailsScreenState();
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
+  bool isAllScanned = false;
   List<order.CartItem> _products = [];
   XFile? _imageFile;
   String _selectedNumber = '1'; // Add this line
+  late int _selectedOrderStatus;
+  String? _userId;
+
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
     _products = widget.order.cart;
+    _selectedOrderStatus = widget.order.sipDurum;
+    _getUserId();
+  }
+
+  Future<void> _getUserId() async {
+    try {
+      final user = await _authService.getUser();
+      setState(() {
+        _userId = user?.id.toString();
+      });
+    } catch (e) {
+      print('Error getting user ID: $e');
+      // Handle the error, maybe show a snackbar to the user
+    }
   }
 
   Future<void> _scanBarcode(product.CartItem tappedProduct) async {
@@ -83,51 +105,83 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       setState(() {
         _imageFile = pickedFile;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Image captured successfully')),
+      );
     } else {
       print('No image selected.');
     }
   }
 
-  // Future<void> _showCustomerDetails() async {
-  //   try {
-  //     final orderDetails = await _customerDetailsService.fetchCustomerDetails(widget.order.id.toString());
-      
-  //     if (!mounted) return;
+  Future<void> _updateOrder() async {
+    if (_imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please take a picture first.')),
+      );
+      return;
+    }
 
-  //     showDialog(
-  //       context: context,
-  //       builder: (BuildContext context) {
-  //         return AlertDialog(
-  //           title: const Text("Customer Details"),
-  //           content: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Text("Order ID: ${orderDetails.orderId}"),
-  //               Text("Name: ${orderDetails.customerName}"),
-  //               Text("Email: ${orderDetails.customerEmail}"),
-  //               Text("Phone: ${orderDetails.customerPhone}"),
-  //               Text("Order Status: ${orderDetails.orderStatus}"),
-  //               Text("Order Total: \$${orderDetails.orderTotal.toStringAsFixed(2)}"),
-  //             ],
-  //           ),
-  //           actions: [
-  //             TextButton(
-  //               child: const Text("Close"),
-  //               onPressed: () {
-  //                 Navigator.of(context).pop();
-  //               },
-  //             ),
-  //           ],
-  //         );
-  //       },
-  //     );
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text("Error fetching customer details: $e")),
-  //     );
-  //   }
-  // }
+    final url = Uri.parse('https://gardeniakosmetyka.com/api/v1/order/updateOrder');
+    
+    final request = http.MultipartRequest('POST', url);
+
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('auth_token');
+
+    if (token == null) {
+      throw Exception('Authentication token not found');
+    }
+
+    request.headers['Authorization'] = 'Bearer $token';
+
+    request.fields['user_id'] = _userId ?? '';
+    request.fields['status'] = _selectedOrderStatus.toString();
+    request.fields['order_id'] = widget.order.id.toString();
+
+    request.files.add(await http.MultipartFile.fromPath(
+      'image',
+      _imageFile!.path,
+      filename: _imageFile!.name,
+    ));
+
+    // Enhanced logging
+    print('Sending request to: $url');
+    print('Headers:');
+    request.headers.forEach((key, value) => print('$key: $value'));
+    print('Fields:');
+    request.fields.forEach((key, value) => print('$key: $value'));
+    print('Files:');
+    for (var file in request.files) {
+      print('${file.field}: ${file.filename}');
+    }
+
+    try {
+      final client = http.Client();
+      final streamedResponse = await client.send(request);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        print('Order updated successfully');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sipariş başarıyla güncellendi.')),
+        );
+      } else {
+        print('Failed to update order. Status code: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update order. Please try again later.')),
+        );
+      }
+      client.close();
+    } catch (e) {
+      print('Error updating order: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred while updating the order. Please try again.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +200,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         );
       }
     }
+
+    bool allScanned = groupedProducts.values.every((product) => product.isApproved);
 
     return Scaffold(
       appBar: AppBar(
@@ -191,27 +247,97 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               }).toList(),
           ),
           const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: _pickImage,
-            child: const Text("Send Picture"),
-          ),
+          if (allScanned)
+            const Text("All Barcodes Scanned")
+          else
+            ElevatedButton(
+              style: ButtonStyle(
+                foregroundColor: MaterialStateProperty.all(Colors.green),
+              ),
+              onPressed: _pickImage,
+              child: const Text("Take Picture"),
+            ),
           if (_imageFile != null)
             Padding(
               padding: const EdgeInsets.only(top: 20.0),
               child: Image.file(File(_imageFile!.path)),
             ),
           const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => YourExistingWidget()),
-              );
+          Text('Order Status: ${verbaliseStatus(_selectedOrderStatus)}'),
+          DropdownButton<int>(
+            value: _selectedOrderStatus,
+            isExpanded: true,
+            onChanged: (value) {
+              setState(() {
+                _selectedOrderStatus = value!;
+              });
+              // TODO: Implement API call to update order status
             },
-            child: const Text("Select Printer"),
+            items: const [
+              DropdownMenuItem<int>(value: 0, child: Text('Onay Bekliyor')),
+              DropdownMenuItem<int>(value: 1, child: Text('Siparişi Hazırlayınız')),
+              DropdownMenuItem<int>(value: 2, child: Text('Depoda Hazırlanıyor')),
+              // DropdownMenuItem<int>(value: 3, child: Text('Tamamlandı')),
+              // DropdownMenuItem<int>(value: 4, child: Text('Iptal Edildi')),
+            ],
+          ),
+          SizedBox(height: 16),
+          Text('Payment Status: ${verbaliseOdemeDurumu(widget.order.odemDurum)}'),
+          // DropdownButton<int>(
+          //   value: _selectedPaymentStatus,
+          //   isExpanded: true,
+          //   onChanged: (value) {
+          //     setState(() {
+          //       _selectedPaymentStatus = value!;
+          //     });
+          //     // TODO: Implement API call to update payment status
+          //   },
+          //   items: const [
+          //     DropdownMenuItem<int>(value: 0, child: Text('Bekliyor')),
+          //     DropdownMenuItem<int>(value: 1, child: Text('Ödendi')),
+          //     DropdownMenuItem<int>(value: 2, child: Text('Tamamlandı')),
+          //   ],
+          // ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.all(Colors.blue),
+            ),
+            onPressed: _updateOrder,
+            child: const Text("Update Order"),
           ),
         ],
       ),
     );
+  }
+}
+
+String verbaliseStatus(int status) {
+  switch (status) {
+    case 0:
+      return 'Onay Bekliyor';
+    case 1:
+      return 'Siparişi Hazırlayınız';
+    case 2:
+      return 'Depoda Hazırlanıyor';
+    case 3:
+      return 'Tamamlandı';
+    case 4:
+      return 'Iptal Edildi';
+    default:
+      return 'Bilinmeyen Durum';
+  }
+}
+
+String verbaliseOdemeDurumu(int status) {
+  switch (status) {
+    case 0:
+      return 'Bekliyor';
+    case 1:
+      return 'Ödendi';
+    case 2:
+      return 'Tamamlandı';
+    default:
+      return 'Bilinmeyen Durum';
   }
 }
