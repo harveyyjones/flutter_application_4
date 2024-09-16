@@ -7,10 +7,11 @@ class CartItem {
   final String categoryName;
   final String name;
   final String barcode;
-  final String price;
-  final String qty;
-  final String max;
-  bool isApproved = false;
+  final int qty;
+  final int max;  // Change this from String to int
+  bool isApproved;
+  
+  var price;
 
   CartItem({
     required this.id,
@@ -20,7 +21,7 @@ class CartItem {
     required this.barcode,
     required this.price,
     required this.qty,
-    required this.max,
+    required this.max,  // Add this line
     this.isApproved = false,
   });
 
@@ -31,9 +32,9 @@ class CartItem {
       categoryName: json['category_name'].toString(),
       name: json['name'].toString(),
       barcode: json['barcode'].toString(),
-      price: json['price'].toString(),
-      qty: json['qty'].toString(),
-      max: json['max'].toString(),
+      price: double.parse(json['price'].toString()),
+      qty: int.parse(json['qty'].toString()),
+      max: int.parse(json['max'].toString()),
       isApproved: json['isApproved'] as bool? ?? false,
     );
   }
@@ -47,7 +48,7 @@ class CartItem {
       'barcode': barcode,
       'price': price,
       'qty': qty,
-      'max': max,
+      'max': max,  // Add this line
       'isApproved': isApproved,
     };
   }
@@ -69,6 +70,7 @@ class Order {
   final String orderUser;
   final dynamic depoUserId;
   final dynamic deletedAt;
+  final String? max;  // Change this to nullable String
 
   Order({
     required this.id,
@@ -85,6 +87,7 @@ class Order {
     required this.orderUser,
     this.depoUserId,
     this.deletedAt,
+    this.max,  // Make this optional
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -114,6 +117,7 @@ class Order {
       orderUser: json['order_user'],
       depoUserId: json['depo_user_id'],
       deletedAt: json['deleted_at'],
+      max: json['max']?.toString(),  // Convert to String if not null
     );
   }
 
@@ -134,6 +138,7 @@ class Order {
       'order_user': orderUser,
       'depo_user_id': depoUserId,
       'deleted_at': deletedAt,
+      'max': max,
     };
   }
 }

@@ -13,13 +13,19 @@ class AuthService {
       final response = await http.post(
         Uri.parse('$_baseUrl/login'),
         body: {'email': email, 'password': password},
-      ).timeout(Duration(seconds: 10)); // Add timeout
+      ).timeout(Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        print('Full response: ${response.body}'); // Add this line to print the full response
-        await _saveAuthData(data);
-        print('Login successful. Token: ${data['access_token']}');
+        print('Full response: ${response.body}');
+        
+        // Extract the token from the response
+        final String token = data['access_token'];
+        
+        // Save the auth data including the new token
+        await _saveAuthData(data, token);
+        
+        print('Login successful. Token: $token');
         return data;
       } else {
         throw Exception('Failed to login: ${response.body}');
@@ -29,12 +35,12 @@ class AuthService {
     }
   }
 
-  Future<void> _saveAuthData(Map<String, dynamic> data) async {
+  Future<void> _saveAuthData(Map<String, dynamic> data, String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_tokenKey, data['access_token']);
+      await prefs.setString(_tokenKey, token);
       await prefs.setString(_userKey, json.encode(data['user']));
-      print('Auth data saved. Token: ${data['access_token']}');
+      print('Auth data saved. Token: $token');
     } catch (e) {
       throw Exception('Unable to save auth data: $e');
     }

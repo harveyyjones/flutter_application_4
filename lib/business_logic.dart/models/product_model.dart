@@ -7,6 +7,7 @@ class Product {
   final String barcode;
   final String price;
    var qty;
+  final int max; // Add this line
 
   Product({
     required this.id,
@@ -15,6 +16,7 @@ class Product {
     required this.barcode,
     required this.price,
     required this.qty,
+    required this.max, // Add this line
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -25,6 +27,7 @@ class Product {
       barcode: json['barcode'],
       price: json['price'],
       qty: json['qty'],
+      max: json['max'], // Add this line
     );
   }
 }
@@ -35,6 +38,7 @@ class CartItem {
   final String image;
   var  quantity; // Add this line
   bool isApproved;
+  final int max;
 
   CartItem({
     required this.barcode,
@@ -42,6 +46,7 @@ class CartItem {
     required this.image,
     required this.quantity, // Add this line with a default value
     this.isApproved = false,
+    required this.max,
   });
 
   CartItem.fromProduct({
@@ -50,7 +55,8 @@ class CartItem {
        name = product.name,
        image = product.image,
        quantity = product.qty,
-       isApproved = false;
+       isApproved = false,
+       max = product.max;
 
   // Convert CartItem to a Map
   Map<String, dynamic> toJson() {
@@ -60,6 +66,7 @@ class CartItem {
       'image': image,
       'quantity': quantity,
       'isApproved': isApproved,
+      'max': max, // Add this line
     };
   }
 
@@ -70,6 +77,7 @@ class CartItem {
     String? image,
     var quantity,
     bool? isApproved,
+    int? max, // Add this line
   }) {
     return CartItem(
       barcode: barcode ?? this.barcode,
@@ -77,13 +85,14 @@ class CartItem {
       image: image ?? this.image,
       quantity: quantity ?? this.quantity,
       isApproved: isApproved ?? this.isApproved,
+      max: max ?? this.max,
     );
   }
 
   // Override toString for easier debugging
   @override
   String toString() {
-    return 'CartItem(barcode: $barcode, name: $name, quantity: $quantity, isApproved: $isApproved)';
+    return 'CartItem(barcode: $barcode, name: $name, quantity: $quantity, isApproved: $isApproved, max: $max)';
   }
 
   // Override equality operator
@@ -95,12 +104,13 @@ class CartItem {
         other.name == name &&
         other.image == image &&
         other.quantity == quantity &&
-        other.isApproved == isApproved;
+        other.isApproved == isApproved &&
+        other.max == max;
   }
 
   // Override hashCode
   @override
-  int get hashCode => barcode.hashCode ^ name.hashCode ^ image.hashCode ^ quantity.hashCode ^ isApproved.hashCode;
+  int get hashCode => barcode.hashCode ^ name.hashCode ^ image.hashCode ^ quantity.hashCode ^ isApproved.hashCode ^ max.hashCode;
 
   CartItem.fromCartItem({
     required CartItem cartItem,
@@ -109,5 +119,6 @@ class CartItem {
     barcode = cartItem.barcode,
     name = cartItem.name,
     image = cartItem.image,
-    quantity = cartItem.quantity;
+    quantity = cartItem.quantity,
+    max = cartItem.max; // Add this line
 }

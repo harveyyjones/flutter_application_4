@@ -9,7 +9,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // Add this import
 import 'package:http/http.dart' as http;
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,14 +28,11 @@ class _HomeScreenState extends State<HomeScreen> {
   int? _selectedPaymentStatus;
 
   late Timer _timer;
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
     super.initState();
     _loadOrders();
-    _initializeNotifications();
-    _startPeriodicOrderCheck();
   }
 
   @override
@@ -45,71 +41,11 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _initializeNotifications() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('app_icon');
-    final DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-    final InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  }
+  
 
-  void _startPeriodicOrderCheck() {
-    // Check for new orders every 5 minutes
-    _timer = Timer.periodic(Duration(minutes: 5), (timer) {
-      _checkForNewOrders();
-    });
-  }
 
-  Future<void> _checkForNewOrders() async {
-    try {
-      final newOrders = await _orderService.fetchOrders();
-      if (newOrders.length > _orders.length) {
-        int newOrderCount = newOrders.length - _orders.length;
-        _showNotification('New Orders', 'You have $newOrderCount new order(s)!');
-        setState(() {
-          _orders = newOrders;
-          _applyFilters();
-        });
-      }
-    } catch (e) {
-      print('Error checking for new orders: $e');
-    }
-  }
 
-  Future<void> _showNotification(String title, String body) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'new_orders_channel',
-      'New Orders',
-      importance: Importance.max,
-      priority: Priority.high,
-      sound: RawResourceAndroidNotificationSound('notification_sound'),
-      playSound: true,
-    );
-    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-      presentSound: true,
-      sound: 'notification_sound.aiff',
-    );
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics,
-    );
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      title,
-      body,
-      platformChannelSpecifics,
-    );
-  }
+  
 
   Future<void> _loadOrders() async {
     setState(() {
@@ -119,12 +55,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final orders = await _orderService.fetchOrders();
+      print('Fetched ${orders.length} orders'); // Debug print
       setState(() {
         _orders = orders;
         _filteredOrders = orders;
         _isLoading = false;
       });
+      print('Updated state with ${_filteredOrders.length} filtered orders'); // Debug print
     } catch (e) {
+      print('Error loading orders: $e'); // Debug print
       setState(() {
         _isLoading = false;
         _errorMessage = 'Error loading orders: $e';
@@ -286,6 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             _selectedPaymentStatus = value;
                           });
                         },
+                        
                         items: const [
                           DropdownMenuItem<int>(value: null, child: Text('All')),
                           DropdownMenuItem<int>(value: 0, child: Text('Bekliyor')),
@@ -310,37 +250,39 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: _filteredOrders.length,
-              itemBuilder: (context, index) {
-                final order = _filteredOrders[index];
-                return Card(
-                  margin: EdgeInsets.all(8.0),
-                  child: ListTile(
-                    title: Text('Order #${order.id}'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Created at: ${order.createdAt}'),
-                        Text('Total Price: ${order.totalPrice}'),
-                        Text('Items: ${order.cart.length}'),
-                        Text('Odeme durumu: ${verbaliseOdemeDurumu(order.odemDurum)}'),
-                        Text('Order User ${order.orderUser}'),
-                        Text('Siparis Durumu ${verbaliseStatus(order.sipDurum)}'),
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OrderDetailsScreen(order: order),
+            child: _filteredOrders.isEmpty
+                ? Center(child: Text('No orders found'))
+                : ListView.builder(
+                    itemCount: _filteredOrders.length,
+                    itemBuilder: (context, index) {
+                      final order = _filteredOrders[index];
+                      return Card(
+                        margin: EdgeInsets.all(8.0),
+                        child: ListTile(
+                          title: Text('Order #${order.id}'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Created at: ${order.createdAt}'),
+                              Text('Total Price: ${order.totalPrice}'),
+                              Text('Items: ${order.cart.length}'),
+                              Text('Odeme durumu: ${verbaliseOdemeDurumu(order.odemDurum)}'),
+                              Text('Order User ${order.orderUser}'),
+                              Text('Siparis Durumu ${verbaliseStatus(order.sipDurum)}'),
+                            ],
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OrderDetailsScreen(order: order),
+                              ),
+                            );
+                          },
                         ),
                       );
                     },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

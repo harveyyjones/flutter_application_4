@@ -1,14 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_4/business_logic.dart/models/order_model.dart';
 import 'package:flutter_application_4/business_logic.dart/models/product_model.dart' as product;
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_application_4/business_logic.dart/models/order_model.dart' as order;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_4/business_logic.dart/services/auth_service.dart';
-
-import 'business_logic.dart/models/order_model.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   final Order order;
@@ -21,40 +21,20 @@ class OrderDetailsScreen extends StatefulWidget {
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   bool isAllScanned = false;
-  List<product.CartItem> _products = [];
+  List<order.CartItem> _products = [];
   XFile? _imageFile;
-  String _selectedNumber = '1';
+  String _selectedNumber = '1'; // Add this line
   late int _selectedOrderStatus;
   String? _userId;
-  List<String> _scannedBarcodes = [];
-  Map<String, int> _productCounters = {};
-  Map<String, TextEditingController> _controllers = {};
 
   final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
-    _products = widget.order.cart.map((item) => product.CartItem(
-      name: item.name,
-      barcode: item.barcode,
-      image: item.image,
-      isApproved: item.isApproved,
-      quantity: item.qty,
-      price: item.price ?? 0.0, // Use 0.0 as default if price is null
-      maxQuantity: item.max,
-    )).toList();
+    _products = widget.order.cart;
     _selectedOrderStatus = widget.order.sipDurum;
     _getUserId();
-    for (var product in _products) {
-      _controllers[product.barcode] = TextEditingController(text: '0');
-    }
-  }
-
-  @override
-  void dispose() {
-    _controllers.values.forEach((controller) => controller.dispose());
-    super.dispose();
   }
 
   Future<void> _getUserId() async {
@@ -72,23 +52,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   Future<void> _scanBarcode(product.CartItem tappedProduct) async {
     String barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
       '#ff6666',
-      'İptal',
+      'Cancel',
       true,
       ScanMode.BARCODE,
     );
 
-    if (barcodeScanRes != '-1') {
+    if (barcodeScanRes == tappedProduct.barcode) {
       setState(() {
-        _scannedBarcodes.add(barcodeScanRes);
+        tappedProduct.isApproved = true;  // Update the property
       });
-
-      if (barcodeScanRes == tappedProduct.barcode) {
-        setState(() {
-          tappedProduct.isApproved = true;
-        });
-      } else {
-        _showMismatchDialog(tappedProduct);
-      }
+    } else {
+      _showMismatchDialog(tappedProduct );
     }
   }
 
@@ -97,17 +71,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Barkod Uyuşmazlığı"),
+          title: const Text("Barcode Mismatch"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Image.network(tappedProduct.image),
-              Text("Beklenen: ${tappedProduct.name}"),
+              Text("Expected: ${tappedProduct.name}"),
             ],
           ),
           actions: [
             TextButton(
-              child: const Text("Tamam"),
+              child: const Text("OK"),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -131,7 +105,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         _imageFile = pickedFile;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fotoğraf başarıyla yakalandı')),
+        SnackBar(content: Text('Image captured successfully')),
       );
     } else {
       print('No image selected.');
@@ -139,16 +113,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   }
 
   Future<void> _updateOrder() async {
-    if (!_allProductsScanned()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lütfen siparişi güncellemeden önce tüm ürünleri tarayın.')),
-      );
-      return;
-    }
-
     if (_imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lütfen önce bir fotoğraf çekin.')),
+        SnackBar(content: Text('Please take a picture first.')),
       );
       return;
     }
@@ -195,60 +162,28 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       print('Response status code: ${response.statusCode}');
       print('Response body: ${response.body}');
 
-      if (response.statusCode == 200) {
-        print('Sipariş başarıyla güncellendi');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sipariş başarıyla güncellendi.')),
-        );
-      } else {
-        print('Sipariş güncellenemedi. Durum kodu: ${response.statusCode}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sipariş güncellenemedi. Lütfen daha sonra tekrar deneyin.')),
-        );
+      if (mounted) {  // Add this check
+        if (response.statusCode == 200) {
+          print('Order updated successfully');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Sipariş başarıyla güncellendi.')),
+          );
+        } else {
+          print('Failed to update order. Status code: ${response.statusCode}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update order. Please try again later.')),
+          );
+        }
       }
       client.close();
     } catch (e) {
-      print('Sipariş güncellenirken hata oluştu: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sipariş güncellenirken bir hata oluştu. Lütfen tekrar deneyin.')),
-      );
-    }
-  }
-
-  bool _allProductsScanned() {
-    return _products.every((product) => product.isApproved);
-  }
-
-  void _showCustomerDetails() {
-    print('Bayi Adı: ${widget.order.bayiAdi}');
-    print('Sipariş Veren: ${widget.order.siparis_veren}');
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Müşteri Detayları"),
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Bayi Adı: ${widget.order.bayiAdi}"),
-              Text("Sipariş Veren: ${widget.order.siparis_veren}"),
-              // For example:
-              // Text("Adres: ${widget.order.address}"),
-              // Text("Telefon: ${widget.order.phone}"),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: Text("Kapat"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+      print('Error updating order: $e');
+      if (mounted) {  // Add this check
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred while updating the order. Please try again.')),
         );
-      },
-    );
+      }
+    }
   }
 
   @override
@@ -257,9 +192,16 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     Map<String, product.CartItem> groupedProducts = {};
     for (var item in _products) {
       if (groupedProducts.containsKey(item.barcode)) {
-        groupedProducts[item.barcode]!.quantity += item.quantity;
+        groupedProducts[item.barcode]!.quantity += item.qty; // Update this line
       } else {
-        groupedProducts[item.barcode] = item;
+        groupedProducts[item.barcode] = product.CartItem(
+          barcode: item.barcode,
+          name: item.name,
+          image: item.image,
+          quantity: item.qty,
+          isApproved: item.isApproved,
+          max: item.max, // Keep max as String to match CartItem constructor
+        );
       }
     }
 
@@ -267,106 +209,54 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sipariş Detayları"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.info_outline),
-            onPressed: _showCustomerDetails,
-          ),
-        ],
+        title: const Text("Order Details"),
       ),
       body: ListView(
         children: [
           ...groupedProducts.values.map((product) {
             return ListTile(
               leading: SizedBox(
-                width: 50,
-                height: 50,
+                width: 50,  // Adjust the width as needed
+                height: 50, // Adjust the height as needed
                 child: Image.network(
                   product.image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.image_not_supported, size: 50);
-                  },
+                  fit: BoxFit.cover, // Ensure the image covers the box
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
-                    return Center(child: CircularProgressIndicator());
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(child: Icon(Icons.error));
                   },
                 ),
               ),
               title: Text(product.name),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Barkod: ${product.barcode}"),
-                  Text("Miktar: ${product.quantity}"),
-                  Text("Fiyat: \PLN ${product.price.toStringAsFixed(2)}"),
-                  if (product.maxQuantity != null)
-                    Text("Maksimum Miktar: ${product.maxQuantity}"),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.remove),
-                        onPressed: () {
-                          setState(() {
-                            _productCounters[product.barcode] = (_productCounters[product.barcode] ?? 0) - 1;
-                            _controllers[product.barcode]!.text = _productCounters[product.barcode].toString();
-                          });
-                        },
-                      ),
-                      SizedBox(
-                        width: 50,
-                        child: TextField(
-                          textAlign: TextAlign.center,
-                          keyboardType: TextInputType.number,
-                          controller: _controllers[product.barcode],
-                          onChanged: (value) {
-                            int? newValue = int.tryParse(value);
-                            if (newValue != null) {
-                              setState(() {
-                                _productCounters[product.barcode] = newValue;
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () {
-                          setState(() {
-                            _productCounters[product.barcode] = (_productCounters[product.barcode] ?? 0) + 1;
-                            _controllers[product.barcode]!.text = _productCounters[product.barcode].toString();
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+              subtitle: Text(
+                "Barcode: ${product.barcode}\n"
+                "Quantity: ${product.quantity}\n"
+                "Max Stock: ${product.max}", // Add this line to display max stock
               ),
-              tileColor: product.isApproved ? Colors.green.withOpacity(0.3) : null,
+              tileColor: product.isApproved ? Colors.green.withOpacity(0.3) : null, // Highlight approved items
               trailing: product.isApproved
                   ? null
                   : ElevatedButton(
                       onPressed: () => _scanBarcode(product),
-                      child: const Text("Tara"),
+                      child: const Text("Scan"),
                     ),
             );
           }).toList(),
           const SizedBox(height: 20),
-          Text('Taranan Barkodlar:'),
-          Column(
-            children: _scannedBarcodes.map((barcode) => Text(barcode)).toList(),
-          ),
+         
           const SizedBox(height: 10),
           if (allScanned)
-            const Text("Tüm Barkodlar Tarandı")
+            const Text("All Barcodes Scanned")
           else
             ElevatedButton(
               style: ButtonStyle(
                 foregroundColor: MaterialStateProperty.all(Colors.green),
               ),
               onPressed: _pickImage,
-              child: const Text("Fotoğraf Çek"),
+              child: const Text("Take Picture"),
             ),
           if (_imageFile != null)
             Padding(
@@ -374,7 +264,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               child: Image.file(File(_imageFile!.path)),
             ),
           const SizedBox(height: 10),
-          Text('Sipariş Durumu: ${verbaliseStatus(_selectedOrderStatus)}'),
+          Text('Order Status: ${verbaliseStatus(_selectedOrderStatus)}'),
           DropdownButton<int>(
             value: _selectedOrderStatus,
             isExpanded: true,
@@ -382,29 +272,40 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               setState(() {
                 _selectedOrderStatus = value!;
               });
+              // TODO: Implement API call to update order status
             },
             items: const [
               DropdownMenuItem<int>(value: 0, child: Text('Onay Bekliyor')),
               DropdownMenuItem<int>(value: 1, child: Text('Siparişi Hazırlayınız')),
               DropdownMenuItem<int>(value: 2, child: Text('Depoda Hazırlanıyor')),
+              DropdownMenuItem<int>(value: 3, child: Text('Tamamlandı')),
+              DropdownMenuItem<int>(value: 4, child: Text('Iptal Edildi')),
             ],
           ),
           SizedBox(height: 16),
-          Text('Ödeme Durumu: ${verbaliseOdemeDurumu(widget.order.odemDurum)}'),
+          Text('Payment Status: ${verbaliseOdemeDurumu(widget.order.odemDurum)}'),
+          // DropdownButton<int>(
+          //   value: _selectedPaymentStatus,
+          //   isExpanded: true,
+          //   onChanged: (value) {
+          //     setState(() {
+          //       _selectedPaymentStatus = value!;
+          //     });
+          //     // TODO: Implement API call to update payment status
+          //   },
+          //   items: const [
+          //     DropdownMenuItem<int>(value: 0, child: Text('Bekliyor')),
+          //     DropdownMenuItem<int>(value: 1, child: Text('Ödendi')),
+          //     DropdownMenuItem<int>(value: 2, child: Text('Tamamlandı')),
+          //   ],
+          // ),
           SizedBox(height: 16),
           ElevatedButton(
             style: ButtonStyle(
               foregroundColor: MaterialStateProperty.all(Colors.blue),
             ),
-            onPressed: _allProductsScanned() ? _updateOrder : null,
-            child: Text(_allProductsScanned() ? "Siparişi Güncelle" : "Önce Tüm Ürünleri Tarayın"),
-          ),
-          ElevatedButton(
-            style: ButtonStyle(
-              foregroundColor: MaterialStateProperty.all(Colors.blue),
-            ),
-            onPressed: _showCustomerDetails,
-            child: const Text("Müşteri Detaylarını Görüntüle"),
+            onPressed: _updateOrder,
+            child: const Text("Update Order"),
           ),
         ],
       ),
@@ -423,7 +324,7 @@ String verbaliseStatus(int status) {
     case 3:
       return 'Tamamlandı';
     case 4:
-      return 'İptal Edildi';
+      return 'Iptal Edildi';
     default:
       return 'Bilinmeyen Durum';
   }
@@ -435,8 +336,9 @@ String verbaliseOdemeDurumu(int status) {
       return 'Bekliyor';
     case 1:
       return 'Ödendi';
+    case 2:
+      return 'Tamamlandı';
     default:
       return 'Bilinmeyen Durum';
   }
-      return 'Ödendi';
-  }
+}

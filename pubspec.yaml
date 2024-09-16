@@ -40,7 +40,6 @@ dependencies:
   flutter_barcode_scanner: ^2.0.0
   image_picker: ^1.1.2
   font_awesome_flutter: ^10.7.0
-  flutter_bluetooth_serial: ^0.4.0
   shared_preferences: ^2.3.2
 
 dev_dependencies:
