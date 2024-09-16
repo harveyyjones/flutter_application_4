@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_4/business_logic.dart/models/order_model.dart';
 import 'package:flutter_application_4/business_logic.dart/services/service_for_orders.dart';
@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // Add this import
 import 'package:http/http.dart' as http;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,10 +28,87 @@ class _HomeScreenState extends State<HomeScreen> {
   int? _selectedOrderStatus;
   int? _selectedPaymentStatus;
 
+  late Timer _timer;
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
   @override
   void initState() {
     super.initState();
     _loadOrders();
+    _initializeNotifications();
+    _startPeriodicOrderCheck();
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('app_icon');
+    final DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+    final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  void _startPeriodicOrderCheck() {
+    // Check for new orders every 5 minutes
+    _timer = Timer.periodic(Duration(minutes: 5), (timer) {
+      _checkForNewOrders();
+    });
+  }
+
+  Future<void> _checkForNewOrders() async {
+    try {
+      final newOrders = await _orderService.fetchOrders();
+      if (newOrders.length > _orders.length) {
+        int newOrderCount = newOrders.length - _orders.length;
+        _showNotification('New Orders', 'You have $newOrderCount new order(s)!');
+        setState(() {
+          _orders = newOrders;
+          _applyFilters();
+        });
+      }
+    } catch (e) {
+      print('Error checking for new orders: $e');
+    }
+  }
+
+  Future<void> _showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'new_orders_channel',
+      'New Orders',
+      importance: Importance.max,
+      priority: Priority.high,
+      sound: RawResourceAndroidNotificationSound('notification_sound'),
+      playSound: true,
+    );
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+      presentSound: true,
+      sound: 'notification_sound.aiff',
+    );
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      platformChannelSpecifics,
+    );
   }
 
   Future<void> _loadOrders() async {
@@ -218,11 +296,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
+                SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _applyFilters,
+                  child: Text('Apply Filters'),
+                ),
                 // SizedBox(height: 8),
-                // ElevatedButton(
-                //   onPressed: _applyFilters,
-                //   child: Text('Apply Filters'),
-                // ),
                 // ElevatedButton(
                 //   onPressed: _pickImage,
                 //   child: const Text("Send Picture"),
