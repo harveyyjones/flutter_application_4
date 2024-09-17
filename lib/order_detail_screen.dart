@@ -27,6 +27,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   late int _selectedOrderStatus;
   String? _userId;
   int valueOfTheCounter = 0;
+  Map<String, int> productCounters = {};
 
   final AuthService _authService = AuthService();
 
@@ -36,6 +37,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     _products = widget.order.cart;
     _selectedOrderStatus = widget.order.sipDurum;
     _getUserId();
+    // Initialize counters for each product to 0
+    for (var item in _products) {
+      productCounters[item.barcode] = 0;
+    }
   }
 
   Future<void> _getUserId() async {
@@ -106,7 +111,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         _imageFile = pickedFile;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Image captured successfully')),
+        const SnackBar(content: Text('Image captured successfully')),
       );
     } else {
       print('No image selected.');
@@ -116,7 +121,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   Future<void> _updateOrder() async {
     if (_imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please take a picture first.')),
+        const SnackBar(content: Text('Please take a picture first.')),
       );
       return;
     }
@@ -167,12 +172,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         if (response.statusCode == 200) {
           print('Order updated successfully');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Sipariş başarıyla güncellendi.')),
+            const SnackBar(content: Text('Sipariş başarıyla güncellendi.')),
           );
         } else {
           print('Failed to update order. Status code: ${response.statusCode}');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update order. Please try again later.')),
+            const SnackBar(content: Text('Failed to update order. Please try again later.')),
           );
         }
       }
@@ -181,7 +186,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       print('Error updating order: $e');
       if (mounted) {  // Add this check
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An error occurred while updating the order. Please try again.')),
+          const SnackBar(content: Text('An error occurred while updating the order. Please try again.')),
         );
       }
     }
@@ -252,44 +257,28 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            if (product.quantity > 0) valueOfTheCounter--;
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                        child: const Text('-'),
-                      ),
+                     
                       SizedBox(
                         width: 60,
                         child: TextFormField(
-                          initialValue: valueOfTheCounter.toString(),
+                          initialValue: productCounters[product.barcode].toString(),
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
                           onChanged: (value) {
                             int? newValue = int.tryParse(value);
                             if (newValue != null) {
                               setState(() {
-                                valueOfTheCounter= newValue.clamp(0, product.max);
+                                productCounters[product.barcode] = newValue.clamp(0, product.max);
                               });
                             }
                           },
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             contentPadding: EdgeInsets.symmetric(horizontal: 8),
                             border: OutlineInputBorder(),
                           ),
                         )
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            if (valueOfTheCounter < product.max) valueOfTheCounter++;
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                        child: const Text('+'),
-                      ),
+                     
                     ],
                   ),
                 ),
@@ -305,7 +294,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           else
             ElevatedButton(
               style: ButtonStyle(
-                foregroundColor: MaterialStateProperty.all(Colors.green),
+                foregroundColor: WidgetStateProperty.all(Colors.green),
               ),
               onPressed: _pickImage,
               child: const Text("Take Picture"),
@@ -334,10 +323,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               DropdownMenuItem<int>(value: 4, child: Text('Iptal Edildi')),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text('Payment Status: ${verbaliseOdemeDurumu(widget.order.odemDurum)}'),
          
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           ElevatedButton(
             style: ButtonStyle(
               foregroundColor: MaterialStateProperty.all(Colors.blue),
