@@ -26,6 +26,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   String? _userId;
   Map<String, int> productCounters = {};
   OrderDetails? _orderDetails; // Add this line to hold order details
+  Map<String, int> _productCounts = {}; // New field for product counts
 
   final AuthService _authService = AuthService();
 
@@ -56,10 +57,38 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     try {
       _orderDetails = await ServiceForOrderDetails().getOrder(widget.order.id.toString());
       setState(() {}); // Update UI after fetching order details
+      if (_orderDetails != null) {
+        _updateProductCounts(_orderDetails!); // Update product counts after fetching order details
+      }
     } catch (e) {
       print('Error fetching order details: $e');
     }
     return _orderDetails;
+  }
+
+  void _updateProductCounts(OrderDetails orderDetails) {
+    _productCounts.clear();
+    List<String> checkStrings = [
+      'do domu',
+      'perfumy',
+      'zapach do auta',
+      'balsam do Ciała',
+      '500 ml',
+      'zawieszka',
+      'diamond',
+      'damski żel pod prysznic',
+      
+    ];
+
+    for (var item in _products) {
+      String itemName = item.name.toLowerCase();
+      for (var checkString in checkStrings) {
+        if (itemName.contains(checkString.toLowerCase())) {
+          _productCounts[checkString] = (_productCounts[checkString] ?? 0) + (item.quantity as int );
+          break; // Count each item only once
+        }
+      }
+    }
   }
 
   Future<void> _scanBarcode(CartItem product) async {
@@ -300,7 +329,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           SizedBox(
                             width: 80,
                             child: TextFormField(
-                              initialValue: productCounters[product.barcode].toString(),
+                              initialValue: '0',
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
                               style: const TextStyle(color: Colors.white),
@@ -389,6 +418,24 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             const SizedBox(height: 16),
             Text('Ödeme Durumu: ${verbaliseOdemeDurumu(widget.order.odemDurum)}',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            // Display product counts
+            Card(
+              color: Colors.grey[850],
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Product Counts:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    ..._productCounts.entries.map((entry) => 
+                      Text('${entry.key}: ${entry.value}', style: const TextStyle(color: Colors.white70))
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
          
             ElevatedButton(
