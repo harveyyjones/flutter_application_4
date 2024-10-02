@@ -1,4 +1,3 @@
-
 class OrderDetails {
   final int id;
   // Removed cart reference
@@ -8,16 +7,16 @@ class OrderDetails {
   final int currentId;
   final int userId;
   final double totalPrice;
-  final String? note;
+  final String? note; // Nullable
   final DateTime createdAt;
   final DateTime updatedAt;
   final String orderUser;
-  final String depoUserId;
-  final String? deletedAt;
-  final String shippingImage;
+  final String? depoUserId; // Nullable
+  final String? deletedAt; // Nullable
+  final String? shippingImage; // Nullable
   final String bayiAdi;
   final String siparisVeren;
-  final String depoUserAd;
+  final String? depoUserAd; // Nullable
 
   OrderDetails({
     required this.id,
@@ -28,39 +27,37 @@ class OrderDetails {
     required this.currentId,
     required this.userId,
     required this.totalPrice,
-    this.note,
+    this.note, // Nullable
     required this.createdAt,
     required this.updatedAt,
     required this.orderUser,
-    required this.depoUserId,
-    this.deletedAt,
-    required this.shippingImage,
+    this.depoUserId, // Nullable
+    this.deletedAt, // Nullable
+    this.shippingImage, // Nullable
     required this.bayiAdi,
     required this.siparisVeren,
-    required this.depoUserAd,
+    this.depoUserAd, // Nullable
   });
 
   factory OrderDetails.fromJson(Map<String, dynamic> json) {
-    // Removed cartJson and cartItems logic
     return OrderDetails(
       id: json['id'],
-      // Removed cart assignment
-      sipDurum: json['sip_durum'],
-      odemDurum: json['odem_durum'],
-      stokDurum: json['stok_durum'],
-      currentId: json['current_id'],
-      userId: json['user_id'],
-      totalPrice: json['total_price'].toDouble(),
-      note: json['note'],
+      sipDurum: json['sip_durum'] ?? 0, // Default to 0 if null
+      odemDurum: json['odem_durum'] ?? 0, // Default to 0 if null
+      stokDurum: json['stok_durum'] ?? 0, // Default to 0 if null
+      currentId: json['current_id'] ?? 0, // Default to 0 if null
+      userId: json['user_id'] ?? 0, // Default to 0 if null
+      totalPrice: (json['total_price'] ?? 0).toDouble(), // Default to 0 if null
+      note: json['note'] ?? '', // Default to empty string if null
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
-      orderUser: json['order_user'],
-      depoUserId: json['depo_user_id'],
-      deletedAt: json['deleted_at'],
-      shippingImage: json['shipping_image'] ?? '',
-      bayiAdi: json['bayi_adi'],
-      siparisVeren: json['siparis_veren'],
-      depoUserAd: json['depo_user_ad'],
+      orderUser: json['order_user'] ?? '', // Default to empty string if null
+      depoUserId: json['depo_user_id'], // Keep as is, can be null
+      deletedAt: json['deleted_at'], // Keep as is, can be null
+      shippingImage: json['shipping_image'] ?? '', // Default to empty string if null
+      bayiAdi: json['bayi_adi'] ?? '', // Default to empty string if null
+      siparisVeren: json['siparis_veren'] ?? '', // Default to empty string if null
+      depoUserAd: json['depo_user_ad'] ?? '', // Default to empty string if null
     );
   }
 }

@@ -87,6 +87,17 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Orders', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: () {
+              _loadOrders();
+              setState(() {
+                
+              });
+            }, // Call the _loadOrders method to refresh
+          ),
+        ],
       ),
       body: _buildBody(),
       // bottomNavigationBar: buildBottomNavigationBar(),

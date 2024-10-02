@@ -35,7 +35,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     _products = widget.order.cart;
     _selectedOrderStatus = widget.order.sipDurum;
     _getUserId();
-    _fetchOrderDetails(); // Fetch order details
+     _fetchOrderDetails(); // Fetch order details
     for (var item in _products) {
       productCounters[item.barcode] = item.quantity;
     }
@@ -236,7 +236,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             if (_orderDetails!.bayiAdi.isNotEmpty) ...[
               Text('Bayi Adı: ${_orderDetails!.bayiAdi}', style: const TextStyle(color: Colors.white)),
               const SizedBox(height: 10),
-              if (_orderDetails!.shippingImage.isNotEmpty && _orderDetails!.shippingImage != null)
+              if (_orderDetails!.shippingImage!.isNotEmpty && _orderDetails!.shippingImage != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(

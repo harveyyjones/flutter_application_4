@@ -31,6 +31,5 @@ class ServiceForOrderDetails {
             throw Exception('Failed to load order: ${response.body}'); // Include response body in exception
         }
     }
-//test
     // ... existing code ...
 }
