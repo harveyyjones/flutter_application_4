@@ -1,17 +1,15 @@
 import 'dart:convert';
 
-
 class CartItem {
   final int id;
   final String image;
   final String categoryName;
   final String name;
   final String barcode;
-  final int qty;
-  final int max;  // Change this from String to int
+  var quantity;
+  final int max;
   bool isApproved;
-  
-  var price;
+  final double price;
 
   CartItem({
     required this.id,
@@ -19,10 +17,10 @@ class CartItem {
     required this.categoryName,
     required this.name,
     required this.barcode,
-    required this.price,
-    required this.qty,
-    required this.max,  // Add this line
+    required this.quantity,
+    required this.max,
     this.isApproved = false,
+    required this.price,
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
@@ -32,10 +30,10 @@ class CartItem {
       categoryName: json['category_name'].toString(),
       name: json['name'].toString(),
       barcode: json['barcode'].toString(),
-      price: double.parse(json['price'].toString()),
-      qty: int.parse(json['qty'].toString()),
+      quantity: int.parse(json['qty'].toString()), // Ensure quantity is an int
       max: int.parse(json['max'].toString()),
       isApproved: json['isApproved'] as bool? ?? false,
+      price: double.parse(json['price'].toString()),
     );
   }
 
@@ -46,14 +44,13 @@ class CartItem {
       'category_name': categoryName,
       'name': name,
       'barcode': barcode,
-      'price': price,
-      'qty': qty,
-      'max': max,  // Add this line
+      'quantity': quantity,
+      'max': max,
       'isApproved': isApproved,
+      'price': price,
     };
   }
 }
-
 
 class Order {
   final int id;
@@ -61,16 +58,12 @@ class Order {
   final int sipDurum;
   final int odemDurum;
   final int stokDurum;
-  final int currentId;
   final int userId;
   final int totalPrice;
   final String? note;
   final String createdAt;
   final String updatedAt;
   final String orderUser;
-  final dynamic depoUserId;
-  final dynamic deletedAt;
-  final String? max;  // Change this to nullable String
 
   Order({
     required this.id,
@@ -78,16 +71,12 @@ class Order {
     required this.sipDurum,
     required this.odemDurum,
     required this.stokDurum,
-    required this.currentId,
     required this.userId,
     required this.totalPrice,
     this.note,
     required this.createdAt,
     required this.updatedAt,
     required this.orderUser,
-    this.depoUserId,
-    this.deletedAt,
-    this.max,  // Make this optional
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -108,20 +97,15 @@ class Order {
       sipDurum: json['sip_durum'],
       odemDurum: json['odem_durum'],
       stokDurum: json['stok_durum'],
-      currentId: json['current_id'],
       userId: json['user_id'],
       totalPrice: json['total_price'],
       note: json['note'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
       orderUser: json['order_user'],
-      depoUserId: json['depo_user_id'],
-      deletedAt: json['deleted_at'],
-      max: json['max']?.toString(),  // Convert to String if not null
     );
   }
 
-  // Add a method to convert Order to JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -129,28 +113,12 @@ class Order {
       'sip_durum': sipDurum,
       'odem_durum': odemDurum,
       'stok_durum': stokDurum,
-      'current_id': currentId,
       'user_id': userId,
       'total_price': totalPrice,
       'note': note,
       'created_at': createdAt,
       'updated_at': updatedAt,
       'order_user': orderUser,
-      'depo_user_id': depoUserId,
-      'deleted_at': deletedAt,
-      'max': max,
     };
-  }
-}
-
-// Modify the fetchOrders function
-Future<List<Order>> fetchOrders() async {
-  try {
-    final orders = await fetchOrders();
-    // Convert the returned orders to the correct type if necessary
-    return orders.map((order) => Order.fromJson(order.toJson())).toList();
-  } catch (e) {
-    print('Error fetching orders: $e');
-    rethrow;
   }
 }
