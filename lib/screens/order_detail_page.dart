@@ -33,7 +33,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _products = widget.order.cart;
+    _products = widget.order.cart..sort((a, b) => b.quantity.compareTo(a.quantity));
+
     _selectedOrderStatus = widget.order.sipDurum;
     _getUserId();
      _fetchOrderDetails(); // Fetch order details
@@ -277,6 +278,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 ),
               const SizedBox(height: 20),
             ],
+
+
+
             ..._products.map((product) {
               return Card(
                 color: Colors.grey[850],
@@ -329,7 +333,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           SizedBox(
                             width: 80,
                             child: TextFormField(
-                              initialValue: '0',
+                              initialValue: widget.order.sipDurum == 3 ?   product.quantity.toString():'0',
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
                               style: const TextStyle(color: Colors.white),

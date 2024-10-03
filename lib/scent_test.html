@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fragrance Selector Quiz</title>
+  <style>
+    #fragrance-selector {
+      font-family: 'Poppins', sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .quiz-container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    .question, #result {
+      display: none;
+    }
+    .question.active, #result.active {
+      display: block;
+    }
+    h2 {
+      font-size: 24px;
+      margin-bottom: 30px;
+      text-align: center;
+      color: #2c3e50;
+    }
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .option-button {
+      background-color: #a9d0f5;
+      color: #2c3e50;
+      border: none;
+      border-radius: 15px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      width: calc(50% - 10px);
+      max-width: 200px;
+      text-align: center;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .option-button:hover {
+      background-color: #7fb3d5;
+      transform: translateY(-3px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .option-button img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin-bottom: 10px;
+    }
+    #progress-bar {
+      width: 100%;
+      background-color: #e0e0e0;
+      height: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    #progress {
+      width: 20%;
+      height: 100%;
+      background-color: #3498db;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+    .recommendations {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .product {
+      margin: 10px;
+      text-align: center;
+      width: calc(33.33% - 20px);
+      min-width: 200px;
+    }
+    .product img {
+      width: 100%;
+      max-width: 200px;
+      height: auto;
+      object-fit: cover;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .product p {
+      margin: 10px 0;
+      font-size: 16px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+  <div id="fragrance-selector">
+    <div class="quiz-container">
+      <div id="q0" class="question active">
+        <h2>Jakiej jesteś płci? 👤</h2>
+        <div class="options">
+          <button class="option-button" data-answer="male">
+            <img src="https://images.unsplash.com/photo-1581803118522-7b72a50f7e9f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8bWFufGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Male">
+            Male 🧔
+          </button>
+          <button class="option-button" data-answer="female">
+            <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8d29tYW58ZW58MHx8MHx8fHww&auto=format&fit=crop&w=500&q=60" alt="Female">
+            Female 👩
+          
+        </div>
+      </div>
+  
+      <div id="q1" class="question">
+        <h2>Jaki zapach sprawia, że czujesz radość? ✨</h2>
+        <div class="options">
+          <button class="option-button" data-answer="floral">
+            <img src="https://images.unsplash.com/photo-1562690868-60bbe7293e94?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Zmxvd2VyfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Floral">
+            Floral 🌸
+          </button>
+          <button class="option-button" data-answer="fruity">
+            <img src="https://images.unsplash.com/photo-1619566636858-adf3ef46400b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8ZnJ1aXR8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60" alt="Fruity">
+            Fruity 🍎
+          </button>
+          <button class="option-button" data-answer="fresh">
+            <img src="https://images.unsplash.com/photo-1505236732171-72a5b19c4981?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZnJlc2h8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60" alt="Fresh">
+            Fresh 🌊
+          </button>
+          <button class="option-button" data-answer="woody">
+            <img src="https://alorwood.com/public/uploads/maciej-ostrowski-cj5lel85mem-unsplash-1280x853.jpg" alt="Woody">
+            Woody 🌳
+          </button>
+        </div>
+      </div>
+  
+      <div id="q2" class="question">
+        <h2>Jak intensywny powinien być Twój zapach? 💫</h2>
+        <div class="options">
+          <button class="option-button" data-answer="subtle">
+            <img src="https://images.unsplash.com/photo-1528821128474-27f963b062bf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3VidGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Subtle">
+            Subtle Whisper 🍃
+          </button>
+          <button class="option-button" data-answer="balanced">
+            <img src="https://www.keypersonofinfluence.com/wp-content/uploads/2015/09/entrevo-keypersonofinfluence-balanced-lifestyle.jpg" alt="Balanced">
+            Perfect Balance ⚖️
+          </button>
+          <button class="option-button" data-answer="bold">
+            <img src="https://images.unsplash.com/photo-1589561253898-768105ca91a8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Ym9sZHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="Bold">
+            Make a Statement 💥
+          </button>
+        </div>
+      </div>
+  
+      <div id="q3" class="question">
+        <h2>Kiedy będziesz nosić ten zapach? 🌟</h2>
+        <div class="options">
+          <button class="option-button" data-answer="day">
+            <img src="https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8ZGF5fGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Day">
+            Sun-Kissed Days ☀️
+          </button>
+          <button class="option-button" data-answer="night">
+            <img src="https://images.unsplash.com/photo-1483086431886-3590a88317fe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fG5pZ2h0fGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Night">
+            Starry Nights 🌙
+          </button>
+          <button class="option-button" data-answer="versatile">
+            <img src="https://images.unsplash.com/photo-1513151233558-d860c5398176?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8dmVyc2F0aWxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Versatile">
+            Every Moment ⏰
+          </button>
+        </div>
+      </div>
+  
+      <div id="q4" class="question">
+        <h2>Jaki jest Twój zapachowy styl? 🎭</h2>
+        <div class="options">
+          <button class="option-button" data-answer="romantic">
+            <img src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cm9tYW50aWN8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60" alt="Romantic">
+            Hopeless Romantic 💖
+          </button>
+          <button class="option-button" data-answer="adventurous">
+            <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8YWR2ZW50dXJvdXN8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60" alt="Adventurous">
+            Thrill Seeker 🏄‍♀️
+          </button>
+          <button class="option-button" data-answer="elegant">
+            <img src="https://images.unsplash.com/photo-1470219556762-1771e7f9427d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZWxlZ2FudHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="Elegant">
+            Classy Chic 🥂
+          </button>
+          <button class="option-button" data-answer="free-spirited">
+            <img src="https://images.unsplash.com/photo-1540206395-68808572332f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZnJlZSUyMHNwaXJpdHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="Free-spirited">
+            Free Spirit 🦋
+          </button>
+        </div>
+      </div>
+  
+      <div id="q5" class="question">
+        <h2>Jaki jest Twój idealny przedział cenowy? 💎</h2>
+        <div class="options">
+          <button class="option-button" data-answer="budget">
+            <img src="https://images.unsplash.com/photo-1607863680198-23d4b2565df0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YnVkZ2V0fGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Budget">
+            Savvy Saver 💰
+          </button>
+          <button class="option-button" data-answer="mid-range">
+            <img src="https://images.unsplash.com/photo-1534951009808-766178b47a4f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8bWlkJTIwcmFuZ2V8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60" alt="Mid-range">
+            Balanced Budget 💸
+          </button>
+          <button class="option-button" data-answer="luxury">
+            <img src="https://images.unsplash.com/photo-1581974944026-5d6ed762f617?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bHV4dXJ5fGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Luxury">
+            Luxe Lover 👑
+          </button>
+        </div>
+      </div>
+  
+      <div id="result">
+        <h2>Znaleźliśmy idealny zapach dla Ciebie! 🎉</h2>
+        <p>Na podstawie Twoich wyborów, polecamy sprawdzić ten zapach:</p>
+        <div id="recommendation"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+  jQuery(document).ready(function($) {
+      let currentQuestion = 0; // Start from 0 for the gender question
+      let userPreferences = {
+          gender: '', // Added gender preference
+          scent: '',
+          intensity: '',
+          occasion: '',
+          vibe: '',
+          pricePoint: ''
+      };
+  
+      $('.option-button').on('click', function() {
+          let answer = $(this).data('answer');
+          nextQuestion(answer);
+      });
+  
+      function nextQuestion(answer) {
+          $(`#q${currentQuestion}`).removeClass('active');
+          
+          switch(currentQuestion) {
+              case 0:
+                  userPreferences.gender = answer; // Capture gender
+                  break;
+              case 1:
+                  userPreferences.scent = answer;
+                  break;
+              case 2:
+                  userPreferences.intensity = answer;
+                  break;
+              case 3:
+                  userPreferences.occasion = answer;
+                  break;
+              case 4:
+                  userPreferences.vibe = answer;
+                  break;
+              case 5:
+                  userPreferences.pricePoint = answer;
+                  showResult();
+                  return;
+          }
+  
+          currentQuestion++;
+          $(`#q${currentQuestion}`).addClass('active');
+          updateProgressBar();
+      }
+  
+      function showResult() {
+          $('#q5').removeClass('active');
+          $('#result').addClass('active');
+          
+          const recommendedProducts = findBestMatches(userPreferences);
+          
+          console.log('Recommended Products:', recommendedProducts); // Debug log
+          
+          let recommendationsHtml = '<div class="recommendations">';
+          recommendedProducts.forEach(product => {
+              recommendationsHtml += `
+                  <div class="product">
+                      <a href="${product.url}" target="_blank">
+                          <img src="${product.image}" alt="${product.name}" onerror="this.onerror=null;this.src='https://via.placeholder.com/200x250?text=Product+Image';">
+                          <p>${product.name}</p>
+                      </a>
+                  </div>
+              `;
+          });
+          recommendationsHtml += '</div>';
+          
+          $('#recommendation').html(recommendationsHtml);
+          updateProgressBar();
+      }
+  
+      function updateProgressBar() {
+          const progress = (currentQuestion / 6) * 100; // Update to 6 total questions
+          $('#progress').css('width', progress + '%');
+      }
+  
+      function findBestMatches(preferences) {
+          const products = [
+              {
+                  name: "K130 Lady Millioon Paco Rabn",
+                  url: "https://lorisperfumy.pl/produkt/loris-k130-lady-millioon-paco-rabn-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K130-Lady-Millioon-Paco-Rabn-Perfumy-Damskie-800x1000.jpg",
+                  gender: "female",
+                  scent: "woody", // Updated scent
+                  intensity: "subtle", // Updated intensity
+                  occasion: "day", // Updated occasion
+                  vibe: "free-spirited", // Updated vibe
+                  pricePoint: "budget"
+              },
+              {
+                  name: "K014 Absolutlly Givenc",
+                  url: "https://lorisperfumy.pl/produkt/loris-k014-absolutlly-givenc-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K014-Absolutlly-Givenc-Perfumy-Damskie-614x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "bold",
+                  occasion: "night",
+                  vibe: "romantic",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "K024 Burbrry Classi̧c",
+                  url: "https://lorisperfumy.pl/produkt/loris-k024-burbrry-classi%cc%87c-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K024-Burbrry-Classi%CC%87c-Perfumy-Damskie-614x800.jpg",
+                  gender: "female",
+                  scent: "fruity",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K037 Crystal Nior Vsace",
+                  url: "https://lorisperfumy.pl/produkt/loris-k037-crystal-nior-vsace-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K037-Crystal-Nior-Vsace-Perfumy-Damskie-617x800.jpg",
+                  gender: "female",
+                  scent: "fresh",
+                  intensity: "subtle",
+                  occasion: "day",
+                  vibe: "adventurous",
+                  pricePoint: "budget"
+              },
+              // New products
+              {
+                  name: "K001 212 Sexxy Cherra",
+                  url: "https://lorisperfumy.pl/produkt/loris-k001-212-sexxy-cherra-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K001-212-Sexxy-Cherra-Perfumy-Damskie-615x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "bold",
+                  occasion: "night",
+                  vibe: "romantic",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "K015 Allieen Thr Mugel",
+                  url: "https://lorisperfumy.pl/produkt/loris-k015-allieen-thr-mugel-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K015-Allieen-Thr-Mugel-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "woody",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K018 Be Delicous Dnkrrn",
+                  url: "https://lorisperfumy.pl/produkt/loris-k018-be-delicous-dnkrrn-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K018-Be-Delicous-Dnkrrn-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "fruity",
+                  intensity: "subtle",
+                  occasion: "day",
+                  vibe: "free-spirited",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "K025 Burbrry Wekend",
+                  url: "https://lorisperfumy.pl/produkt/loris-k025-burbrry-wekend-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K025-Burbrry-Wekend-Perfumy-Damskie-615x800.jpg",
+                  gender: "female",
+                  scent: "fresh",
+                  intensity: "subtle",
+                  occasion: "day",
+                  vibe: "adventurous",
+                  pricePoint: "budget"
+              },
+              {
+                  name: "K026 Brihgt Chrsystal Vsace",
+                  url: "https://lorisperfumy.pl/produkt/loris-k026-brihgt-chrsystal-vsace-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K026-Brihgt-Chrsystal-Vsace-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K033 Candy Canel",
+                  url: "https://lorisperfumy.pl/produkt/loris-k033-candy-canel-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K033-Candy-Canel-Perfumy-Damskie-615x800.jpg",
+                  gender: "female",
+                  scent: "fruity", // Changed from "sweet" to match quiz options
+                  intensity: "bold",
+                  occasion: "night",
+                  vibe: "romantic",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "K037 Crystal Nior Vsace",
+                  url: "https://lorisperfumy.pl/produkt/loris-k037-crystal-nior-vsace-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K037-Crystal-Nior-Vsace-Perfumy-Damskie-617x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K041 Coco Mademoiselle Canel",
+                  url: "https://lorisperfumy.pl/produkt/loris-k041-coco-mademoiselle-canel-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K041-Coco-Mademoiselle-Canel-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K042 Coolwateer Doff",
+                  url: "https://lorisperfumy.pl/produkt/loris-k042-coolwateer-doff-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K042-Coolwateer-Doff-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K048 Chol Love Chol",
+                  url: "https://lorisperfumy.pl/produkt/loris-k048-chol-love-chol-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K048-Chol-Love-Chol-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "fresh",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K067 Escad Collection Escad",
+                  url: "https://lorisperfumy.pl/produkt/loris-k067-escad-collection-escad-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K067-Escad-Collection-Escad-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "fresh",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K079 Fantasys Britspers",
+                  url: "https://lorisperfumy.pl/produkt/loris-k079-fantasys-britspers-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K079-Fantasys-Britspers-Perfumy-Damskie-617x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "subtle",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K090 Guci Guilty Guci",
+                  url: "https://lorisperfumy.pl/produkt/loris-k090-guci-guilty-guci-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K090-Guci-Guilty-Guci-Perfumy-Damskie-615x800.jpg",
+                  gender: "female",
+                  scent: "fresh",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "K092 Hipnotic Psoison Chrs Dor",
+                  url: "https://lorisperfumy.pl/produkt/loris-k092-hipnotic-psoison-chrs-dor-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K092-Hipnotic-Psoison-Chrs-Dor-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "night",
+                  vibe: "romantic",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "M001 212 MAN Cherra",
+                  url: "https://lorisperfumy.pl/produkt/loris-m001-212-man-cherra-perfumy-meskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-M001-212-MAN-Cherra-Perfumy-Meskie-607x800.jpg",
+                  gender: "male",
+                  scent: "fresh",
+                  intensity: "subtle",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "M003 Aqua Giio Gio Armn",
+                  url: "https://lorisperfumy.pl/produkt/loris-m003-aqua-giio-gio-armn-perfumy-meskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-M003-Aqua-Giio-Gio-Armn-Perfumy-Meskie-608x800.jpg",
+                  gender: "male",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "night",
+                  vibe: "romantic",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "M013 Aveentus Cret",
+                  url: "https://lorisperfumy.pl/produkt/loris-m013-aveentus-cret-perfumy-meskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-M013-Aveentus-Cret-Perfumy-Meskie-1-619x800.jpg",
+                  gender: "male",
+                  scent: "fresh",
+                  intensity: "subtle",
+                  occasion: "day",
+                  vibe: "free-spirited",
+                  pricePoint: "budget"
+              },
+              {
+                  name: "M020 Black Codde Gio Armn",
+                  url: "https://lorisperfumy.pl/produkt/loris-m020-black-codde-gio-armn-perfumy-meskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-M020-Black-Codde-Gio-Armn-Perfumy-Meskie-610x800.jpg",
+                  gender: "male",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "M025 Booss Hboss",
+                  url: "https://lorisperfumy.pl/produkt/loris-m025-booss-hboss-perfumy-meskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-M025-Booss-Hboss-Perfumy-Meskie-610x800.jpg",
+                  gender: "male",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "day",
+                  vibe: "romantic",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "K110 Jadorre Chrs Dor",
+                  url: "https://lorisperfumy.pl/produkt/loris-k110-jadorre-chrs-dor-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K110-Jadorre-Chrs-Dor-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "K119 La Vie Estte Bellee Lncome",
+                  url: "https://lorisperfumy.pl/produkt/loris-k119-la-vie-estte-bellee-lncome-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K119-La-Vie-Estte-Bellee-Lncome-Perfumy-Damskie-616x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "M033 Burberryys Burbrry",
+                  url: "https://lorisperfumy.pl/produkt/loris-m033-burberryys-burbrry-perfumy-meskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-M033-Burberryys-Burbrry-Perfumy-Meskie-1-619x800.jpg",
+                  gender: "male",
+                  scent: "fruity",
+                  intensity: "bold",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "M035 Blue De Chaneel Canel",
+                  url: "https://lorisperfumy.pl/produkt/loris-m035-blue-de-chaneel-canel-perfumy-meskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-M035-Blue-De-Chaneel-Canel-Perfumy-Meskie-618x800.jpg",
+                  gender: "male",
+                  scent: "woody",
+                  intensity: "subtle",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "mid-range"
+              },
+              {
+                  name: "K120 Lcost Pour Femme Lcost",
+                  url: "https://lorisperfumy.pl/produkt/loris-k120-lcost-pour-femme-lcost-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K120-Lcost-Pour-Femme-Lcost-Perfumy-Damskie-615x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "luxury"
+              },
+              {
+                  name: "K128 Lolita Lift Lolita Lemb",
+                  url: "https://lorisperfumy.pl/produkt/loris-k128-lolita-lift-lolita-lemb-perfumy-damskie/",
+                  image: "https://lorisperfumy.pl/wp-content/uploads/2021/11/Loris-K128-Lolita-Lift-Lolita-Lemb-Perfumy-Damskie-617x800.jpg",
+                  gender: "female",
+                  scent: "floral",
+                  intensity: "balanced",
+                  occasion: "versatile",
+                  vibe: "elegant",
+                  pricePoint: "mid-range"
+              }
+          ];
+  
+          let scoredProducts = products
+              .filter(product => {
+                  // Filter out products that don't match the user's gender
+                  if (preferences.gender === "male" && product.gender === "female") return false;
+                  if (preferences.gender === "female" && product.gender === "male") return false;
+                  return true;
+              })
+              .map(product => {
+                  let score = 0;
+                  if (preferences.gender === "unisex" || product.gender === "unisex" || product.gender === preferences.gender) {
+                      score += 4;
+                  }
+                  if (product.scent === preferences.scent) score += 3;
+                  if (product.intensity === preferences.intensity) score += 2;
+                  if (product.occasion === preferences.occasion) score += 2;
+                  if (product.vibe === preferences.vibe) score += 2;
+                  if (product.pricePoint === preferences.pricePoint) score += 1;
+                  return { ...product, score };
+              });
+  
+          scoredProducts.sort((a, b) => b.score - a.score);
+          
+          console.log("Top 3 matches found:", scoredProducts.slice(0, 3)); // Debug log
+          return scoredProducts.slice(0, 3);
+      }
+  });
+  </script>
+</body>
+</html>
