@@ -1,44 +1,48 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_4/business_logic.dart/models%20baselinker/orders_model_baselinker.dart';
 import 'package:flutter_application_4/business_logic.dart/models/order_model.dart';
+import 'package:flutter_application_4/business_logic.dart/services%20for%20baselinker/baselinker_order_service.dart';
 import 'package:flutter_application_4/business_logic.dart/services/service_for_orders.dart';
+import 'package:flutter_application_4/screens/bs_order_details.dart';
 import 'package:flutter_application_4/screens/order_detail_page.dart';
-import 'package:flutter_application_4/screens/bs_orders.dart';
 
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class BaselinkerPage extends StatefulWidget {
+  const BaselinkerPage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
-  _HomeScreenState createState() => _HomeScreenState();
+  _BaselinkerPageState createState() => _BaselinkerPageState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  List<Order> _orders = [];
-  List<Order> _filteredOrders = [];
+class _BaselinkerPageState extends State<BaselinkerPage> {
+  List<BaselinkerOrder> _orders = []; // Changed type to BaselinkerOrder
+  List<BaselinkerOrder> _filteredOrders = []; // Changed type to BaselinkerOrder
   bool _isLoading = true;
   String? _errorMessage;
-  final OrderService _orderService = OrderService();
+  final BaselinkerOrderService _orderService = BaselinkerOrderService();
 
   
-   final List<Widget> _pages= [const HomeScreen(),];
+  //  final List<Widget> _pages= [const HomeScreen(),];
 
   int? _selectedOrderStatus;
   int? _selectedPaymentStatus;
   int _currentIndex = 0;
 
-  late Timer _timer;
+  late Timer _timer; // Keep this if you plan to use it
 
   @override
   void initState() {
     super.initState();
     _loadOrders();
+    _timer = Timer.periodic(Duration(seconds: 100), (timer) {
+      _loadOrders(); // Example usage of the timer
+    });
   }
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer.cancel(); // Ensure this is called only if _timer is initialized
     super.dispose();
   }
 
@@ -49,8 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final orders = await _orderService.fetchOrders();
+      final orders = await _orderService.fetchOrders(); // Removed cast to List<Order>
       print('Fetched ${orders.length} orders'); // Debug print
+
       setState(() {
         _orders = orders;
         _filteredOrders = orders;
@@ -69,8 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void _applyFilters() {
     setState(() {
       _filteredOrders = _orders.where((order) {
-        bool matchesOrderStatus = _selectedOrderStatus == null || order.sipDurum == _selectedOrderStatus;
-        bool matchesPaymentStatus = _selectedPaymentStatus == null || order.odemDurum == _selectedPaymentStatus;
+        bool matchesOrderStatus = _selectedOrderStatus == null || order.orderStatus == _selectedOrderStatus;
+        bool matchesPaymentStatus = _selectedPaymentStatus == null || order.paymentId == _selectedPaymentStatus;
         return matchesOrderStatus && matchesPaymentStatus;
       }).toList();
     });
@@ -181,7 +186,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onLongPress: () => Navigator.push(context, MaterialPageRoute(builder: (context) => BaselinkerPage())),
                 onPressed: _applyFilters,
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.black, backgroundColor: Colors.tealAccent,
@@ -214,23 +218,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 8),
                             Text('Created at: ${order.createdAt}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            // Text('Total Price: ${order.totalPrice}',
-                            //     style: TextStyle(color: Colors.grey[400])),
-                            Text('Items: ${order.cart.length}',
+                            Text('Price: ${order.price}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Payment Status: ${verbaliseOdemeDurumu(order.odemDurum)}',
+                            Text('Status: ${order.orderStatus}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Order User: ${order.orderUser}',
-                                style: TextStyle(color: Colors.grey[400])),
-                            Text('Order Status: ${verbaliseStatus(order.sipDurum)}',
-                                style: TextStyle(color: Colors.grey[400])),
+                            // Add more fields as needed
                           ],
                         ),
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => OrderDetailsScreen(order: order),
+                              builder: (context) => BaselinkerOrderDetailsScreen(order: order),
                             ),
                           );
                         },
@@ -244,53 +243,53 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => _pages[index]),
-          );
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        selectedItemColor: Colors.tealAccent,
-        unselectedItemColor: Colors.grey[400],
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart_outlined),
-            activeIcon: Icon(Icons.shopping_cart),
-            label: 'Orders',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Orders',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget buildBottomNavigationBar() {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       color: Colors.grey[850],
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.2),
+  //           blurRadius: 8,
+  //           offset: const Offset(0, -2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: BottomNavigationBar(
+  //       currentIndex: _currentIndex,
+  //       onTap: (index) {
+  //         Navigator.push(
+  //           context,
+  //           MaterialPageRoute(builder: (context) => _pages[index]),
+  //         );
+  //         setState(() {
+  //           _currentIndex = index;
+  //         });
+  //       },
+  //       backgroundColor: Colors.transparent,
+  //       elevation: 0,
+  //       selectedItemColor: Colors.tealAccent,
+  //       unselectedItemColor: Colors.grey[400],
+  //       items: const [
+  //         BottomNavigationBarItem(
+  //           icon: Icon(Icons.shopping_cart_outlined),
+  //           activeIcon: Icon(Icons.shopping_cart),
+  //           label: 'Orders',
+  //         ),
+  //         BottomNavigationBarItem(
+  //           icon: Icon(Icons.home_outlined),
+  //           activeIcon: Icon(Icons.home),
+  //           label: 'Orders',
+  //         ),
+  //         BottomNavigationBarItem(
+  //           icon: Icon(Icons.person_outline),
+  //           activeIcon: Icon(Icons.person),
+  //           label: 'Profile',
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }
 
 String verbaliseStatus(int status) {

@@ -33,13 +33,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _products = widget.order.cart..sort((a, b) => b.quantity.compareTo(a.quantity));
+    _products = widget.order.cart..sort((a, b) => (b.quantity ?? 0).compareTo(a.quantity ?? 0)); // Use 0 as default if quantity is null
 
-    _selectedOrderStatus = widget.order.sipDurum;
+    _selectedOrderStatus = widget.order.sipDurum ?? 0; // Provide a default value
     _getUserId();
      _fetchOrderDetails(); // Fetch order details
     for (var item in _products) {
-      productCounters[item.barcode] = item.quantity;
+      productCounters[item.barcode] = item.quantity ?? 0; // Use 0 as default if quantity is null
     }
   }
 
