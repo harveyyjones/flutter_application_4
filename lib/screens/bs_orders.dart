@@ -21,12 +21,16 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
   bool _isLoading = true;
   String? _errorMessage;
   final BaselinkerOrderService _orderService = BaselinkerOrderService();
+    Map<String, int> _productCounts = {}; // New field for product counts
+      List<BaselinkerBasketItem> _products = [];    
+
+
 
   
   //  final List<Widget> _pages= [const HomeScreen(),];
 
   int? _selectedOrderStatus;
-  int? _selectedPaymentStatus;
+  String? _selectedPaymentStatus; // Changed to String to match payment_id
   int _currentIndex = 0;
 
   late Timer _timer; // Keep this if you plan to use it
@@ -81,6 +85,8 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
     });
   }
 
+  
+
  
 
 
@@ -90,7 +96,7 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
     return Scaffold(
       backgroundColor: Colors.grey[900],
       appBar: AppBar(
-        title: const Text('Orders', style: TextStyle(color: Colors.white)),
+        title: const Text('Web Toptan Siparişleri', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         elevation: 0,
         actions: [
@@ -151,9 +157,13 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                     DropdownMenuItem<int>(value: null, child: Text('All')),
                     DropdownMenuItem<int>(value: 0, child: Text('Onay Bekliyor')),
                     DropdownMenuItem<int>(value: 1, child: Text('Siparişi Hazırlayınız')),
-                    DropdownMenuItem<int>(value: 2, child: Text('Depoda Hazırlanıyor')),
-                    DropdownMenuItem<int>(value: 3, child: Text('Tamamlandı')),
-                    DropdownMenuItem<int>(value: 4, child: Text('Iptal Edildi')),
+                    DropdownMenuItem<int>(value: 2, child: Text('Kargoya Verilecek')),
+                    DropdownMenuItem<int>(value: 3, child: Text('Kargoya Verildi')),
+                    DropdownMenuItem<int>(value: 4, child: Text('Tamamlandı')),
+                    DropdownMenuItem<int>(value: 5, child: Text('Müşteri Alacak')),
+                    DropdownMenuItem<int>(value: 6, child: Text('Müşteri Teslim Aldı')),
+                    DropdownMenuItem<int>(value: 7, child: Text('Ödeme Bekleniyor')),
+                    DropdownMenuItem<int>(value: -1, child: Text('Sipariş Iptal')),
                   ],
                 ),
               ),
@@ -164,7 +174,7 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                   color: Colors.grey[850],
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: DropdownButton<int>(
+                child: DropdownButton<String>(
                   value: _selectedPaymentStatus,
                   hint: const Text('Payment Status', style: TextStyle(color: Colors.white70)),
                   isExpanded: true,
@@ -177,10 +187,9 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                     });
                   },
                   items: const [
-                    DropdownMenuItem<int>(value: null, child: Text('All')),
-                    DropdownMenuItem<int>(value: 0, child: Text('All')),
-                    DropdownMenuItem<int>(value: 1, child: Text('Ödendi')),
-                    DropdownMenuItem<int>(value: 2, child: Text('Tamamlandı')),
+                    DropdownMenuItem<String>(value: null, child: Text('All')),
+                    DropdownMenuItem<String>(value: "Kapıda Ödeme", child: Text('Kapıda Ödeme')),
+                    DropdownMenuItem<String>(value: "Banka Transferi", child: Text('Banka Transferi')),
                   ],
                 ),
               ),
@@ -218,9 +227,11 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                             const SizedBox(height: 8),
                             Text('Created at: ${order.createdAt}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Price: ${order.price}',
+                            Text('Items: ${order.baskets.length}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Status: ${order.orderStatus}',
+                            Text('Status: ${verbaliseStatus(order.orderStatus)}',
+                                style: TextStyle(color: Colors.grey[400])),
+                            Text('Payment: ${order.paymentId}',
                                 style: TextStyle(color: Colors.grey[400])),
                             // Add more fields as needed
                           ],
@@ -299,11 +310,19 @@ String verbaliseStatus(int status) {
     case 1:
       return 'Siparişi Hazırlayınız';
     case 2:
-      return 'Depoda Hazırlanıyor';
+      return 'Kargoya Verilecek';
     case 3:
-      return 'Tamamlandı';
+      return 'Kargoya Verildi';
     case 4:
-      return 'Iptal Edildi';
+      return 'Tamamlandı';
+    case 5:
+      return 'Müşteri Alacak';
+    case 6:
+      return 'Müşteri Teslim Aldı';
+    case 7:
+      return 'Ödeme Bekleniyor';
+    case -1:
+      return 'Sipariş Iptal';
     default:
       return 'Bilinmeyen Durum';
   }

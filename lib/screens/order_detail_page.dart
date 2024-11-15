@@ -8,23 +8,24 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_4/business_logic.dart/services/auth_service.dart';
-
-class OrderDetailsScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_application_4/providers/scanned_product_provider_bayi.dart';
+class OrderDetailsScreen extends ConsumerStatefulWidget {
   final Order order;
 
   const OrderDetailsScreen({Key? key, required this.order}) : super(key: key);
 
   @override
-  _OrderDetailsScreenState createState() => _OrderDetailsScreenState();
+  ConsumerState<OrderDetailsScreen> createState() => _OrderDetailsScreenState();
 }
 
-class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
+class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
   bool isAllScanned = false;
   List<CartItem> _products = [];
   XFile? _imageFile;
   late int _selectedOrderStatus;
   String? _userId;
-  Map<String, int> productCounters = {};
+  // Map<String, int> productCounters = {};
   OrderDetails? _orderDetails; // Add this line to hold order details
   Map<String, int> _productCounts = {}; // New field for product counts
 
@@ -33,14 +34,48 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _products = widget.order.cart..sort((a, b) => (b.quantity ?? 0).compareTo(a.quantity ?? 0)); // Use 0 as default if quantity is null
-
-    _selectedOrderStatus = widget.order.sipDurum ?? 0; // Provide a default value
+    _products = widget.order.cart..sort((a, b) => (b.quantity ?? 0).compareTo(a.quantity ?? 0));
+    _selectedOrderStatus = widget.order.sipDurum ?? 0;
     _getUserId();
-     _fetchOrderDetails(); // Fetch order details
-    for (var item in _products) {
-      productCounters[item.barcode] = item.quantity ?? 0; // Use 0 as default if quantity is null
-    }
+    _fetchOrderDetails();
+    
+    Future.microtask(() {
+      if (mounted) {
+        final notifier = ref.read(scannedProductsProvider.notifier);
+        for (var product in _products) {
+          // If order status is 3, mark all products as scanned
+          final shouldBeScanned = widget.order.sipDurum == 3;
+          
+          notifier.initializeProductState(
+            widget.order.id,
+            product.barcode,
+            quantity: widget.order.sipDurum == 3 ? (product.quantity ?? 0) : 0,
+            isScanned: shouldBeScanned,  // Set based on order status
+          );
+
+          // Also update the local isApproved state
+          if (shouldBeScanned) {
+            setState(() {
+              product.isApproved = true;
+            });
+          }
+        }
+      }
+    });
+  }
+
+  void _syncScannedStateFromProvider() {
+    Future.microtask(() {
+      if (mounted) {
+        final scannedState = ref.read(scannedProductsProvider);
+        setState(() {
+          for (var product in _products) {
+            product.isApproved = widget.order.sipDurum == 3 ? true : 
+              scannedState.isProductScanned(widget.order.id, product.barcode);
+          }
+        });
+      }
+    });
   }
 
   Future<void> _getUserId() async {
@@ -107,6 +142,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       setState(() {
         product.isApproved = true;
       });
+      ref.read(scannedProductsProvider.notifier).markScanned(
+        widget.order.id,
+        product.barcode,
+      );
       print('Barcode matches! Product approved.');
       _displayApprovedProducts();
     } else {
@@ -247,7 +286,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool allScanned = _products.every((product) => product.isApproved);
+    final scannedState = ref.watch(scannedProductsProvider);
+    bool allScanned = _products.every((product) => 
+      scannedState.isProductScanned(widget.order.id, product.barcode));
 
     return Scaffold(
       backgroundColor: Colors.grey[900],
@@ -282,6 +323,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
             ..._products.map((product) {
+              final isScanned = scannedState.isProductScanned(
+                widget.order.id,
+                product.barcode,
+              );
+
               return Card(
                 color: Colors.grey[850],
                 elevation: 4,
@@ -313,8 +359,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         "Barcode: ${product.barcode}\nQuantity: ${product.quantity}\nMax Stock: ${product.max}",
                         style: TextStyle(color: Colors.grey[400]),
                       ),
-                      tileColor: product.isApproved ? Colors.greenAccent.withOpacity(0.2) : null,
-                      trailing: product.isApproved
+                      tileColor: isScanned ? Colors.greenAccent.withOpacity(0.2) : null,
+                      trailing: isScanned
                           ? const Icon(Icons.check_circle, color: Colors.greenAccent)
                           : ElevatedButton(
                               onPressed: () => _scanBarcode(product),
@@ -333,16 +379,21 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           SizedBox(
                             width: 80,
                             child: TextFormField(
-                              initialValue: widget.order.sipDurum == 3 ?   product.quantity.toString():'0',
+                              initialValue: scannedState.hasBeenInitialized(widget.order.id, product.barcode) 
+                                ? scannedState.getProductQuantity(widget.order.id, product.barcode).toString()
+                                : '0',
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
                               style: const TextStyle(color: Colors.white),
                               onChanged: (value) {
                                 int? newValue = int.tryParse(value);
                                 if (newValue != null) {
-                                  setState(() {
-                                    productCounters[product.barcode] = newValue.clamp(0, product.max);
-                                  });
+                                  final clampedValue = newValue.clamp(0, product.max);
+                                  ref.read(scannedProductsProvider.notifier).updateQuantity(
+                                    widget.order.id,
+                                    product.barcode,
+                                    clampedValue,
+                                  );
                                 }
                               },
                               decoration: InputDecoration(

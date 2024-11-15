@@ -91,16 +91,26 @@ class AuthService {
       throw Exception('Unable to retrieve user data: $e');
     }
   }
-
   Future<void> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(_tokenKey);
       await prefs.remove(_tokenKey);
       await prefs.remove(_userKey);
+      await prefs.remove('ad');
       print('Logout successful. Cleared token: $token');
     } catch (e) {
       throw Exception('Unable to logout: $e');
+    }
+  }
+
+  Future<void> saveAdToPreferences(Map<String, dynamic> adData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('ad', json.encode(adData));
+      print('Ad data saved: $adData');
+    } catch (e) {
+      throw Exception('Unable to save ad data: $e');
     }
   }
 }

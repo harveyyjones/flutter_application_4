@@ -4,7 +4,7 @@ class BaselinkerOrder {
   final int id;
   final String currency;
   final String token;
-  final int price;
+  final int price;  // Kept as int, but will handle decimal values
   final String paymentId;
   final int musteriId;
   final int adresId;
@@ -45,26 +45,45 @@ class BaselinkerOrder {
 
   factory BaselinkerOrder.fromJson(Map<String, dynamic> json) {
     return BaselinkerOrder(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      currency: json['currency'].toString(),
-      token: json['token'].toString(),
-      price: json['price'] is int ? json['price'] : int.parse(json['price'].toString()),
-      paymentId: json['payment_id'].toString(),
-      musteriId: json['musteri_id'] is int ? json['musteri_id'] : int.parse(json['musteri_id'].toString()),
-      adresId: json['adres_id'] is int ? json['adres_id'] : int.parse(json['adres_id'].toString()),
-      basketId: json['basket_id'].toString(),
+      id: _parseInt(json['id']),
+      currency: json['currency']?.toString() ?? '',
+      token: json['token']?.toString() ?? '',
+      price: _parseInt(json['price']),  // Using modified _parseInt
+      paymentId: json['payment_id']?.toString() ?? '',
+      musteriId: _parseInt(json['musteri_id']),
+      adresId: _parseInt(json['adres_id']),
+      basketId: json['basket_id']?.toString() ?? '',
       baskets: _parseBaskets(json['baskets']),
-      orderStatus: json['order_status'] is int ? json['order_status'] : int.parse(json['order_status'].toString()),
-      stockStatus: json['stock_status'] is int ? json['stock_status'] : int.parse(json['stock_status'].toString()),
+      orderStatus: _parseInt(json['order_status']),
+      stockStatus: _parseInt(json['stock_status']),
       cargoFirma: json['cargo_firma']?.toString(),
       cargoTakipNo: json['cargo_takip_no']?.toString(),
-      createdAt: DateTime.parse(json['created_at'].toString()),
-      updatedAt: DateTime.parse(json['updated_at'].toString()),
-      depoUserId: json['depo_user_id'] is int ? json['depo_user_id'] : int.parse(json['depo_user_id'].toString()),
-      currentId: json['current_id'] is int ? json['current_id'] : int.parse(json['current_id'].toString()),
+      createdAt: DateTime.parse(json['created_at']?.toString() ?? DateTime.now().toString()),
+      updatedAt: DateTime.parse(json['updated_at']?.toString() ?? DateTime.now().toString()),
+      depoUserId: _parseInt(json['depo_user_id']),
+      currentId: _parseInt(json['current_id']),
       notes: json['notes']?.toString(),
       cargoTutari: json['cargo_tutari']?.toString(),
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    
+    // If it's already an integer, return it
+    if (value is int) return value;
+    
+    // If it's a double, truncate decimal part
+    if (value is double) return value.truncate();
+    
+    // If it's a string, handle potential decimal values
+    if (value is String) {
+      // Split by decimal point and take only the integer part
+      String integerPart = value.split('.')[0];
+      return int.tryParse(integerPart) ?? 0;
+    }
+    
+    return 0;  // Default return if none of the above work
   }
 
   static List<BaselinkerBasketItem> _parseBaskets(dynamic basketsJson) {
@@ -100,12 +119,12 @@ class BaselinkerBasketItem {
   factory BaselinkerBasketItem.fromJson(Map<String, dynamic> json) {
     return BaselinkerBasketItem(
       id: int.parse(json['id'].toString()),
-      name: json['name'].toString(), // Ensured conversion to String
-      barcode: json['barcode'].toString(), // Ensured conversion to String
-      categoryName: json['category_name'].toString(), // Ensured conversion to String
-      qty: json['qty'].toString(), // Ensured conversion to String
+      name: json['name'].toString(),
+      barcode: json['barcode'].toString(),
+      categoryName: json['category_name'].toString(),
+      qty: json['qty'].toString(),
       salePrice: json['sale_price'],
-      image: json['image'].toString(), // Ensured conversion to String
+      image: json['image'].toString(),
     );
   }
 }

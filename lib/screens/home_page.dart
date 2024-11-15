@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_4/business_logic.dart/models/order_model.dart';
+import 'package:flutter_application_4/business_logic.dart/services/auth_service.dart';
 import 'package:flutter_application_4/business_logic.dart/services/service_for_orders.dart';
+import 'package:flutter_application_4/screens/login_page.dart';
 import 'package:flutter_application_4/screens/order_detail_page.dart';
 import 'package:flutter_application_4/screens/bs_orders.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -30,9 +33,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late Timer _timer;
 
+  String? _userName;
+
   @override
   void initState() {
     super.initState();
+    _loadUserName();
     _loadOrders();
   }
 
@@ -40,6 +46,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _timer.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('eposta');
+    });
   }
 
   Future<void> _loadOrders() async {
@@ -51,18 +64,22 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final orders = await _orderService.fetchOrders();
       print('Fetched ${orders.length} orders'); // Debug print
-      setState(() {
-        _orders = orders;
-        _filteredOrders = orders;
-        _isLoading = false;
-      });
+      if (mounted) { // Check if the widget is still mounted
+        setState(() {
+          _orders = orders;
+          _filteredOrders = orders;
+          _isLoading = false;
+        });
+      }
       print('Updated state with ${_filteredOrders.length} filtered orders'); // Debug print
     } catch (e) {
       print('Error loading orders: $e'); // Debug print
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Error loading orders: $e';
-      });
+      if (mounted) { // Check if the widget is still mounted
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error loading orders: $e';
+        });
+      }
     }
   }
 
@@ -76,9 +93,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
- 
-
-
+  void logOut() {
+    // Implement your logout logic here
+    AuthService().logout();
+    Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+    print('User logged out'); // Placeholder for actual logout logic
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,10 +113,12 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
               _loadOrders();
-              setState(() {
-                
-              });
-            }, // Call the _loadOrders method to refresh
+              setState(() {});
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: logOut,
           ),
         ],
       ),
@@ -120,6 +142,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: [
+        if (_userName != null)
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text('Welcome, $_userName!', style: TextStyle(color: Colors.white, fontSize: 20)),
+          ),
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -220,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: TextStyle(color: Colors.grey[400])),
                             Text('Payment Status: ${verbaliseOdemeDurumu(order.odemDurum)}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Order User: ${order.orderUser}',
+                            Text('Order User: ${verbaliseOrdererName(order.userId)}',
                                 style: TextStyle(color: Colors.grey[400])),
                             Text('Order Status: ${verbaliseStatus(order.sipDurum)}',
                                 style: TextStyle(color: Colors.grey[400])),
@@ -320,5 +347,19 @@ String verbaliseOdemeDurumu(int status) {
       return 'Tamamlandı';
     default:
       return 'Bilinmeyen Durum';
+  }
+}
+
+String verbaliseOrdererName(int id) {
+
+  switch (id) {
+    case 2003:
+      return 'WÓLKA - HDM';
+    case 2004:
+      return 'WÓLKA - LAPIA';
+    case 2002:
+      return 'Ptak Hurtowe';
+    default:
+      return id.toString();
   }
 }

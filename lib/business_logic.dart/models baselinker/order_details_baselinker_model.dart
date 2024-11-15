@@ -62,11 +62,7 @@ class BaselinkerOrderDetails {
       musteriId: json['musteri_id'] ?? 0,
       adresId: json['adres_id'] ?? 0,
       basketId: json['basket_id'] ?? '',
-      baskets: (json['baskets'] as String).isNotEmpty 
-        ? (jsonDecode(json['baskets']) as List)
-            .map((item) => BasketItem.fromJson(item))
-            .toList()
-        : [],
+      baskets: _parseBaskets(json['baskets']),
       orderStatus: json['order_status'] ?? 0,
       stockStatus: json['stock_status'] ?? 0,
       cargoFirma: json['cargo_firma'] ?? '',
@@ -154,9 +150,12 @@ class BasketItem {
   final String name;
   final String barcode;
   final String categoryName;
-  final String qty;
-  final dynamic salePrice;
+  final int qty;
+  final double salePrice;
+  final double price;
   final String image;
+
+  bool isScanned = false;
 
   BasketItem({
     required this.id,
@@ -165,7 +164,9 @@ class BasketItem {
     required this.categoryName,
     required this.qty,
     required this.salePrice,
+    required this.price,
     required this.image,
+    this.isScanned = false, // Added default value
   });
 
   factory BasketItem.fromJson(Map<String, dynamic> json) {
@@ -174,8 +175,9 @@ class BasketItem {
       name: json['name'] ?? '',
       barcode: json['barcode'] ?? '',
       categoryName: json['category_name'] ?? '',
-      qty: json['qty'] ?? '',
-      salePrice: json['sale_price'],
+      qty: int.tryParse(json['qty'].toString()) ?? 0,  // Updated to parse as int
+      salePrice: double.tryParse(json['sale_price'].toString()) ?? 0.0,  // Updated to parse as double
+      price: double.tryParse(json['price'].toString()) ?? 0.0,  // Added parsing for price
       image: json['image'] ?? '',
     );
   }
