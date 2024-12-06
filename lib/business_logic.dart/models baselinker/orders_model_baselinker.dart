@@ -4,7 +4,7 @@ class BaselinkerOrder {
   final int id;
   final String currency;
   final String token;
-  final int price;  // Kept as int, but will handle decimal values
+  // final int price;  // Kept as int, but will handle decimal values
   final String paymentId;
   final int musteriId;
   final int adresId;
@@ -19,13 +19,13 @@ class BaselinkerOrder {
   final int depoUserId;
   final int currentId;
   final String? notes;
-  final String? cargoTutari;
+  // final String? cargoTutari;
 
   BaselinkerOrder({
     required this.id,
     required this.currency,
     required this.token,
-    required this.price,
+    // required this.price,
     required this.paymentId,
     required this.musteriId,
     required this.adresId,
@@ -40,7 +40,7 @@ class BaselinkerOrder {
     required this.depoUserId,
     required this.currentId,
     this.notes,
-    this.cargoTutari,
+    // this.cargoTutari,
   });
 
   factory BaselinkerOrder.fromJson(Map<String, dynamic> json) {
@@ -48,7 +48,7 @@ class BaselinkerOrder {
       id: _parseInt(json['id']),
       currency: json['currency']?.toString() ?? '',
       token: json['token']?.toString() ?? '',
-      price: _parseInt(json['price']),  // Using modified _parseInt
+      // price: _parseInt(json['price']),  // Using modified _parseInt
       paymentId: json['payment_id']?.toString() ?? '',
       musteriId: _parseInt(json['musteri_id']),
       adresId: _parseInt(json['adres_id']),
@@ -63,7 +63,7 @@ class BaselinkerOrder {
       depoUserId: _parseInt(json['depo_user_id']),
       currentId: _parseInt(json['current_id']),
       notes: json['notes']?.toString(),
-      cargoTutari: json['cargo_tutari']?.toString(),
+      // cargoTutari: json['cargo_tutari']?.toString(),
     );
   }
 
@@ -103,7 +103,7 @@ class BaselinkerBasketItem {
   final String barcode;
   final String categoryName;
   final String qty;
-  final dynamic salePrice;
+  // final dynamic salePrice;
   final String image;
 
   BaselinkerBasketItem({
@@ -112,7 +112,7 @@ class BaselinkerBasketItem {
     required this.barcode,
     required this.categoryName,
     required this.qty,
-    required this.salePrice,
+    // required this.salePrice,
     required this.image,
   });
 
@@ -123,7 +123,7 @@ class BaselinkerBasketItem {
       barcode: json['barcode'].toString(),
       categoryName: json['category_name'].toString(),
       qty: json['qty'].toString(),
-      salePrice: json['sale_price'],
+      // salePrice: json['sale_price'],
       image: json['image'].toString(),
     );
   }

@@ -1,14 +1,24 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_4/business_logic.dart/models%20baselinker/order_details_baselinker_model.dart';
 import 'package:flutter_application_4/business_logic.dart/models%20baselinker/orders_model_baselinker.dart';
 import 'package:flutter_application_4/business_logic.dart/services%20for%20baselinker/bs_service_order_details.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:flutter_application_4/business_logic.dart/services/auth_service.dart';
+
+class ProductCategory {
+  final String categoryName;
+  final List<BasketItem> products;
+  final int totalQuantity;
+
+  ProductCategory({
+    required this.categoryName,
+    required this.products,
+    required this.totalQuantity,
+  });
+}
 
 class BaselinkerOrderDetailsScreen extends StatefulWidget {
   final BaselinkerOrder order;
@@ -24,10 +34,10 @@ class _BaselinkerOrderDetailsScreenState extends State<BaselinkerOrderDetailsScr
   final AuthService _authService = AuthService();
 
   bool _isLoading = true;
-  late BaselinkerOrderDetails? _orderDetails; // Change to nullable
+  BaselinkerOrderDetails? _orderDetails;
   List<BaselinkerBasketItem> _products = [];
   XFile? _imageFile;
-  late int _selectedOrderStatus = _orderDetails?.orderStatus ?? 0; // Use null-aware operator
+  int _selectedOrderStatus = 0;
   String? _userId;
   Map<String, int> _productCounts = {};
 
@@ -52,46 +62,43 @@ class _BaselinkerOrderDetailsScreenState extends State<BaselinkerOrderDetailsScr
   Future<void> _fetchOrderDetails() async {
     try {
       final orderService = BaselinkerOrderDetailsService();
-      _orderDetails = await orderService.fetchOrderDetails(widget.order.id);
-      if (_orderDetails != null) {
-        _products = _orderDetails!.baskets.cast<BaselinkerBasketItem>(); // Cast to the correct type
-        _updateProductCountsForbaselinker(_orderDetails!.baskets); // Update product counts after fetching order details
+      final details = await orderService.fetchOrderDetails(widget.order.id);
+      if (details != null) {
+        setState(() {
+          _orderDetails = details;
+          _selectedOrderStatus = details.orderStatus;
+          _products = details.baskets.cast<BaselinkerBasketItem>();
+          _updateProductCountsForbaselinker(details.baskets);
+          _isLoading = false;
+        });
       }
-      setState(() {
-        _isLoading = false;
-      });
     } catch (e) {
       print('Error fetching order details: $e');
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load order details: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load order details: $e')),
+        );
+      }
     }
   }
 
   void _updateProductCountsForbaselinker(List<BasketItem> orderDetails) {
     _productCounts.clear();
-    List<String> checkStrings = [
-      'do domu',
-      'perfumy',
-      'zapach do auta',
-      'balsam do Ciała',
-      '500 ml',
-      'zawieszka',
-      'diamond',
-      'damski żel pod prysznic',
-    ];
-
-    for (var item in orderDetails) { // Iterate over orderDetails instead of _products
-      String itemName = item.name.toLowerCase();
-      for (var checkString in checkStrings) {
-        if (itemName.contains(checkString.toLowerCase())) {
-          _productCounts[checkString] = (_productCounts[checkString] ?? 0) + (item.qty as int);
-          break; // Count each item only once
-        }
-      }
+    
+    for (var item in orderDetails) {
+      String category = item.categoryName;
+      _productCounts[category] = (_productCounts[category] ?? 0) + (item.qty as int);
+    }
+    
+    var sortedEntries = _productCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    
+    _productCounts.clear();
+    for (var entry in sortedEntries) {
+      _productCounts[entry.key] = entry.value;
     }
   }
 
@@ -166,6 +173,38 @@ class _BaselinkerOrderDetailsScreenState extends State<BaselinkerOrderDetailsScr
     );
   }
 
+  List<ProductCategory> _getOrganizedProducts() {
+    Map<String, List<BasketItem>> categories = {};
+    
+    for (var product in _orderDetails?.baskets ?? []) {
+      String category = product.categoryName;
+      
+      if (!categories.containsKey(category)) {
+        categories[category] = [];
+      }
+      categories[category]!.add(product);
+    }
+
+    List<ProductCategory> organizedProducts = categories.entries.map((entry) {
+      int totalQuantity = entry.value.fold(0, 
+        (sum, product) => sum + (int.tryParse(product.qty.toString()) ?? 0));
+      
+      List<BasketItem> sortedProducts = List.from(entry.value)
+        ..sort((a, b) => (int.tryParse(b.qty.toString()) ?? 0)
+            .compareTo(int.tryParse(a.qty.toString()) ?? 0));
+      
+      return ProductCategory(
+        categoryName: entry.key,
+        products: sortedProducts,
+        totalQuantity: totalQuantity,
+      );
+    }).toList();
+
+    organizedProducts.sort((a, b) => b.totalQuantity.compareTo(a.totalQuantity));
+
+    return organizedProducts;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -182,22 +221,64 @@ class _BaselinkerOrderDetailsScreenState extends State<BaselinkerOrderDetailsScr
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    Text('Order ID: ${_orderDetails!.id}', style: TextStyle(color: Colors.white)), // Use null-aware operator
-                    Text('Customer: ${_orderDetails!.musteriAdi}', style: TextStyle(color: Colors.white)), // Updated to ensure text is white
-                    ..._orderDetails!.baskets.map((product) { // Use null-aware operator
-                      return Card(
-                        color: product.isScanned ? Colors.green : Colors.grey[900],
-                        child: ListTile(
-                          leading: _buildImageWithLoader(product.image), // Updated to use image loader
-                          title: Text(product.name, style: TextStyle(color: Colors.white)),
-                          subtitle: Text('Quantity: ${product.qty}', style: TextStyle(color: Colors.white)),
-                          trailing: product.isScanned ? SizedBox() : ElevatedButton(
-                            onPressed: () => _scanBarcode(product),
-                            child: Text('Scan', style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0))),
-                          ) 
+                    Text('Order ID: ${_orderDetails!.id}', style: TextStyle(color: Colors.white)),
+                    Text('Customer: ${_orderDetails!.musteriAdi}', style: TextStyle(color: Colors.white)),
+                    const SizedBox(height: 16),
+                    
+                    ..._getOrganizedProducts().map((category) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Category header
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                category.categoryName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                'Total: ${category.totalQuantity}',
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      );
-                    }).toList(),
+                        // Products in this category
+                        ...category.products.map((product) => Card(
+                          color: product.isScanned ? Colors.green : Colors.grey[900],
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            // leading: _buildImageWithLoader(product.image),
+                            title: Text(product.name, style: TextStyle(color: Colors.white)),
+                            subtitle: Text('Quantity: ${product.qty}', 
+                                         style: TextStyle(color: Colors.white70)),
+                            trailing: product.isScanned 
+                              ? SizedBox() 
+                              : ElevatedButton(
+                                  onPressed: () => _scanBarcode(product),
+                                  child: Text('Scan', 
+                                    style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0))),
+                                ),
+                          ),
+                        )).toList(),
+                        const SizedBox(height: 8),
+                      ],
+                    )).toList(),
+
                     const SizedBox(height: 20),
                     Text('Order Status: ${verbaliseStatus(_selectedOrderStatus)}',
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -208,10 +289,12 @@ class _BaselinkerOrderDetailsScreenState extends State<BaselinkerOrderDetailsScr
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Product Counts:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            const Text('Product Counts:', 
+                                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
                             ..._productCounts.entries.map((entry) => 
-                              Text('${entry.key}: ${entry.value}', style: const TextStyle(color: Colors.white70))
+                              Text('${entry.key}: ${entry.value}', 
+                                   style: const TextStyle(color: Colors.white70))
                             ),
                           ],
                         ),

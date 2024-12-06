@@ -4,7 +4,7 @@ class BaselinkerOrderDetails {
   final int id;
   final String currency;
   final String token;
-  final int price;
+  // final int price;
   final String paymentId;
   final int musteriId;
   final int adresId;
@@ -29,7 +29,7 @@ class BaselinkerOrderDetails {
     required this.id,
     required this.currency,
     required this.token,
-    required this.price,
+    // required this.price,
     required this.paymentId,
     required this.musteriId,
     required this.adresId,
@@ -57,7 +57,7 @@ class BaselinkerOrderDetails {
       id: json['id'] ?? 0,
       currency: json['currency'] ?? '',
       token: json['token'] ?? '',
-      price: json['price'] ?? 0,
+      // price: json['price'] ?? 0,
       paymentId: json['payment_id'] ?? '',
       musteriId: json['musteri_id'] ?? 0,
       adresId: json['adres_id'] ?? 0,

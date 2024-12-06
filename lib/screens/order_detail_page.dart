@@ -10,6 +10,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_4/business_logic.dart/services/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application_4/providers/scanned_product_provider_bayi.dart';
+
+// Add this class at the top of your file
+class ProductCategory {
+  final String categoryName;
+  final List<CartItem> products;
+  final int totalQuantity;
+
+  ProductCategory({
+    required this.categoryName,
+    required this.products,
+    required this.totalQuantity,
+  });
+}
+
 class OrderDetailsScreen extends ConsumerStatefulWidget {
   final Order order;
 
@@ -284,6 +298,60 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
     }
   }
 
+  List<ProductCategory> _getOrganizedProducts() {
+    Map<String, List<CartItem>> categories = {};
+    List<String> checkStrings = [
+      'do domu',
+      'perfumy',
+      'zapach do auta',
+      'balsam do Ciała',
+      '500 ml',
+      'zawieszka',
+      'diamond',
+      'damski żel pod prysznic',
+    ];
+
+    // Categorize products
+    for (var product in _products) {
+      String? matchedCategory;
+      String productNameLower = product.name.toLowerCase();
+      
+      for (var categoryName in checkStrings) {
+        if (productNameLower.contains(categoryName.toLowerCase())) {
+          matchedCategory = categoryName;
+          break;
+        }
+      }
+      
+      matchedCategory ??= "Other";
+      
+      if (!categories.containsKey(matchedCategory)) {
+        categories[matchedCategory] = [];
+      }
+      categories[matchedCategory]!.add(product);
+    }
+
+    // Create categories with totals
+    List<ProductCategory> organizedProducts = categories.entries.map((entry) {
+      int totalQuantity = entry.value.fold(0, (sum, product) => sum + (product.quantity ?? 0));
+      return ProductCategory(
+        categoryName: entry.key,
+        products: entry.value,
+        totalQuantity: totalQuantity,
+      );
+    }).toList();
+
+    // Sort categories by total quantity
+    organizedProducts.sort((a, b) => b.totalQuantity.compareTo(a.totalQuantity));
+
+    // Sort products within each category by quantity
+    for (var category in organizedProducts) {
+      category.products.sort((a, b) => (b.quantity ?? 0).compareTo(a.quantity ?? 0));
+    }
+
+    return organizedProducts;
+  }
+
   @override
   Widget build(BuildContext context) {
     final scannedState = ref.watch(scannedProductsProvider);
@@ -320,97 +388,130 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
               const SizedBox(height: 20),
             ],
 
-
-
-            ..._products.map((product) {
-              final isScanned = scannedState.isProductScanned(
-                widget.order.id,
-                product.barcode,
-              );
-
-              return Card(
-                color: Colors.grey[850],
-                elevation: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 60,
-                          height: 60,
-                          child: Image.network(
-                            product.image,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const Center(child: CircularProgressIndicator(color: Colors.tealAccent));
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(child: Icon(Icons.error, color: Colors.redAccent));
-                            },
-                          ),
+            ..._getOrganizedProducts().map((category) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Category header
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        category.categoryName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-                      title: Text(product.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      subtitle: Text(
-                        "Barcode: ${product.barcode}\nQuantity: ${product.quantity}\nMax Stock: ${product.max}",
-                        style: TextStyle(color: Colors.grey[400]),
+                      Text(
+                        'Total: ${category.totalQuantity}',
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 14,
+                        ),
                       ),
-                      tileColor: isScanned ? Colors.greenAccent.withOpacity(0.2) : null,
-                      trailing: isScanned
-                          ? const Icon(Icons.check_circle, color: Colors.greenAccent)
-                          : ElevatedButton(
-                              onPressed: () => _scanBarcode(product),
-                              style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.black,
-                                backgroundColor: Colors.tealAccent,
-                              ),
-                              child: const Text("Tara"),
-                            ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SizedBox(
-                            width: 80,
-                            child: TextFormField(
-                              initialValue: scannedState.hasBeenInitialized(widget.order.id, product.barcode) 
-                                ? scannedState.getProductQuantity(widget.order.id, product.barcode).toString()
-                                : '0',
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.white),
-                              onChanged: (value) {
-                                int? newValue = int.tryParse(value);
-                                if (newValue != null) {
-                                  final clampedValue = newValue.clamp(0, product.max);
-                                  ref.read(scannedProductsProvider.notifier).updateQuantity(
-                                    widget.order.id,
-                                    product.barcode,
-                                    clampedValue,
-                                  );
-                                }
-                              },
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                filled: true,
-                                fillColor: Colors.grey[800],
-                              ),
+                    ],
+                  ),
+                ),
+                // Products in this category (using existing card layout)
+                ...category.products.map((product) {
+                  final isScanned = scannedState.isProductScanned(
+                    widget.order.id,
+                    product.barcode,
+                  );
+                  
+                  return Card(
+                    color: Colors.grey[850],
+                    elevation: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: SizedBox(
+                              width: 60,
+                              height: 60,
+                              // child: Image.network(
+                              //   product.image,
+                              //   fit: BoxFit.cover,
+                              //   loadingBuilder: (context, child, loadingProgress) {
+                              //     if (loadingProgress == null) return child;
+                              //     return const Center(child: CircularProgressIndicator(color: Colors.tealAccent));
+                              //   },
+                              //   errorBuilder: (context, error, stackTrace) {
+                              //     return const Center(child: Icon(Icons.error, color: Colors.redAccent));
+                              //   },
+                              // ),
                             ),
                           ),
-                        ],
-                      ),
+                          title: Text(product.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          subtitle: Text(
+                            "Barcode: ${product.barcode}\nQuantity: ${product.quantity}\nMax Stock: ${product.max}",
+                            style: TextStyle(color: Colors.grey[400]),
+                          ),
+                          tileColor: isScanned ? Colors.greenAccent.withOpacity(0.2) : null,
+                          trailing: isScanned
+                              ? const Icon(Icons.check_circle, color: Colors.greenAccent)
+                              : ElevatedButton(
+                                  onPressed: () => _scanBarcode(product),
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.black,
+                                    backgroundColor: Colors.tealAccent,
+                                  ),
+                                  child: const Text("Tara"),
+                                ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SizedBox(
+                                width: 80,
+                                child: TextFormField(
+                                  initialValue: scannedState.hasBeenInitialized(widget.order.id, product.barcode) 
+                                    ? scannedState.getProductQuantity(widget.order.id, product.barcode).toString()
+                                    : '0',
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.white),
+                                  onChanged: (value) {
+                                    int? newValue = int.tryParse(value);
+                                    if (newValue != null) {
+                                      final clampedValue = newValue.clamp(0, product.max);
+                                      ref.read(scannedProductsProvider.notifier).updateQuantity(
+                                        widget.order.id,
+                                        product.barcode,
+                                        clampedValue,
+                                      );
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                    filled: true,
+                                    fillColor: Colors.grey[800],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
+              ],
+            )).toList(),
             const SizedBox(height: 20),
             if (allScanned) ...[
               const Text("Tüm Barkodlar Tarandı", style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
