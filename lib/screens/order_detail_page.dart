@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_4/business_logic.dart/services/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_application_4/providers/scanned_product_provider_bayi.dart';
+import 'package:flutter_application_4/providers/provider_bayi/scanned_product_provider_bayi.dart';
 
 // Add this class at the top of your file
 class ProductCategory {
@@ -33,7 +33,7 @@ class OrderDetailsScreen extends ConsumerStatefulWidget {
   ConsumerState<OrderDetailsScreen> createState() => _OrderDetailsScreenState();
 }
 
-class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
+class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen> {
   bool isAllScanned = false;
   List<CartItem> _products = [];
   XFile? _imageFile;
@@ -48,23 +48,24 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
   @override
   void initState() {
     super.initState();
-    _products = widget.order.cart..sort((a, b) => (b.quantity ?? 0).compareTo(a.quantity ?? 0));
+    _products = widget.order.cart
+      ..sort((a, b) => (b.quantity ?? 0).compareTo(a.quantity ?? 0));
     _selectedOrderStatus = widget.order.sipDurum ?? 0;
     _getUserId();
     _fetchOrderDetails();
-    
+
     Future.microtask(() {
       if (mounted) {
         final notifier = ref.read(scannedProductsProvider.notifier);
         for (var product in _products) {
           // If order status is 3, mark all products as scanned
           final shouldBeScanned = widget.order.sipDurum == 3;
-          
+
           notifier.initializeProductState(
             widget.order.id,
             product.barcode,
             quantity: widget.order.sipDurum == 3 ? (product.quantity ?? 0) : 0,
-            isScanned: shouldBeScanned,  // Set based on order status
+            isScanned: shouldBeScanned, // Set based on order status
           );
 
           // Also update the local isApproved state
@@ -84,8 +85,10 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
         final scannedState = ref.read(scannedProductsProvider);
         setState(() {
           for (var product in _products) {
-            product.isApproved = widget.order.sipDurum == 3 ? true : 
-              scannedState.isProductScanned(widget.order.id, product.barcode);
+            product.isApproved = widget.order.sipDurum == 3
+                ? true
+                : scannedState.isProductScanned(
+                    widget.order.id, product.barcode);
           }
         });
       }
@@ -105,10 +108,12 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
 
   Future<OrderDetails?> _fetchOrderDetails() async {
     try {
-      _orderDetails = await ServiceForOrderDetails().getOrder(widget.order.id.toString());
+      _orderDetails =
+          await ServiceForOrderDetails().getOrder(widget.order.id.toString());
       setState(() {}); // Update UI after fetching order details
       if (_orderDetails != null) {
-        _updateProductCounts(_orderDetails!); // Update product counts after fetching order details
+        _updateProductCounts(
+            _orderDetails!); // Update product counts after fetching order details
       }
     } catch (e) {
       print('Error fetching order details: $e');
@@ -127,14 +132,14 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
       'zawieszka',
       'diamond',
       'damski żel pod prysznic',
-      
     ];
 
     for (var item in _products) {
       String itemName = item.name.toLowerCase();
       for (var checkString in checkStrings) {
         if (itemName.contains(checkString.toLowerCase())) {
-          _productCounts[checkString] = (_productCounts[checkString] ?? 0) + (item.quantity as int );
+          _productCounts[checkString] =
+              (_productCounts[checkString] ?? 0) + (item.quantity as int);
           break; // Count each item only once
         }
       }
@@ -157,9 +162,9 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
         product.isApproved = true;
       });
       ref.read(scannedProductsProvider.notifier).markScanned(
-        widget.order.id,
-        product.barcode,
-      );
+            widget.order.id,
+            product.barcode,
+          );
       print('Barcode matches! Product approved.');
       _displayApprovedProducts();
     } else {
@@ -202,7 +207,7 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
       print('Image picked: ${pickedFile.path}');
       print('Image name: ${pickedFile.name}');
       print('Image size: ${await File(pickedFile.path).length()} bytes');
-      
+
       setState(() {
         _imageFile = pickedFile;
       });
@@ -231,7 +236,8 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
       return;
     }
 
-    final url = Uri.parse('https://gardeniakosmetyka.com/api/v1/order/updateOrder');
+    final url =
+        Uri.parse('https://gardeniakosmetyka.com/api/v1/order/updateOrder');
     final request = http.MultipartRequest('POST', url);
 
     final prefs = await SharedPreferences.getInstance();
@@ -272,7 +278,9 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
         } else {
           print('Failed to update order. Status code: ${response.statusCode}');
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to update order. Please try again later.')),
+            const SnackBar(
+                content:
+                    Text('Failed to update order. Please try again later.')),
           );
         }
       }
@@ -282,19 +290,23 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
       print('Error updating order: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('An error occurred while updating the order. Please try again.')),
+          const SnackBar(
+              content: Text(
+                  'An error occurred while updating the order. Please try again.')),
         );
       }
     }
   }
 
   void _displayApprovedProducts() {
-    List<CartItem> approvedProducts = _products.where((item) => item.isApproved).toList();
-    
+    List<CartItem> approvedProducts =
+        _products.where((item) => item.isApproved).toList();
+
     if (approvedProducts.isEmpty) {
       print('No approved products found.');
     } else {
-      print('Approved Products: ${approvedProducts.map((p) => p.name).join(', ')}');
+      print(
+          'Approved Products: ${approvedProducts.map((p) => p.name).join(', ')}');
     }
   }
 
@@ -315,16 +327,16 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
     for (var product in _products) {
       String? matchedCategory;
       String productNameLower = product.name.toLowerCase();
-      
+
       for (var categoryName in checkStrings) {
         if (productNameLower.contains(categoryName.toLowerCase())) {
           matchedCategory = categoryName;
           break;
         }
       }
-      
+
       matchedCategory ??= "Other";
-      
+
       if (!categories.containsKey(matchedCategory)) {
         categories[matchedCategory] = [];
       }
@@ -333,7 +345,8 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
 
     // Create categories with totals
     List<ProductCategory> organizedProducts = categories.entries.map((entry) {
-      int totalQuantity = entry.value.fold(0, (sum, product) => sum + (product.quantity ?? 0));
+      int totalQuantity =
+          entry.value.fold(0, (sum, product) => sum + (product.quantity ?? 0));
       return ProductCategory(
         categoryName: entry.key,
         products: entry.value,
@@ -342,11 +355,13 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
     }).toList();
 
     // Sort categories by total quantity
-    organizedProducts.sort((a, b) => b.totalQuantity.compareTo(a.totalQuantity));
+    organizedProducts
+        .sort((a, b) => b.totalQuantity.compareTo(a.totalQuantity));
 
     // Sort products within each category by quantity
     for (var category in organizedProducts) {
-      category.products.sort((a, b) => (b.quantity ?? 0).compareTo(a.quantity ?? 0));
+      category.products
+          .sort((a, b) => (b.quantity ?? 0).compareTo(a.quantity ?? 0));
     }
 
     return organizedProducts;
@@ -355,276 +370,351 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen>  {
   @override
   Widget build(BuildContext context) {
     final scannedState = ref.watch(scannedProductsProvider);
-    bool allScanned = _products.every((product) => 
-      scannedState.isProductScanned(widget.order.id, product.barcode));
+    bool allScanned = _products.every((product) =>
+        scannedState.isProductScanned(widget.order.id, product.barcode));
 
     return Scaffold(
       backgroundColor: Colors.grey[900],
       appBar: AppBar(
-        title: const Text("Sipariş Detayları", style: TextStyle(color: Colors.white)),
+        title: const Text("Sipariş Detayları",
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         elevation: 0,
       ),
       body: FutureBuilder(
         future: _fetchOrderDetails(),
-        builder: (context, snapshot) => snapshot.hasData ? 
-         ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Displaiy bayi_adi and shippingImage if available
-            if (_orderDetails!.bayiAdi.isNotEmpty) ...[
-              Text('Bayi Adı: ${_orderDetails!.bayiAdi}', style: const TextStyle(color: Colors.white)),
-              const SizedBox(height: 10),
-              if (_orderDetails!.shippingImage!.isNotEmpty && _orderDetails!.shippingImage != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    'https://gardeniakosmetyka.com/${_orderDetails!.shippingImage!}',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 200,
-                  ),
-                ),
-              const SizedBox(height: 20),
-            ],
-
-            ..._getOrganizedProducts().map((category) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Category header
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        category.categoryName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+        builder: (context, snapshot) => snapshot.hasData
+            ? ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // Displaiy bayi_adi and shippingImage if available
+                  if (_orderDetails!.bayiAdi.isNotEmpty) ...[
+                    Text('Bayi Adı: ${_orderDetails!.bayiAdi}',
+                        style: const TextStyle(color: Colors.white)),
+                    const SizedBox(height: 10),
+                    if (_orderDetails!.shippingImage!.isNotEmpty &&
+                        _orderDetails!.shippingImage != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          'https://gardeniakosmetyka.com/${_orderDetails!.shippingImage!}',
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 200,
                         ),
                       ),
-                      Text(
-                        'Total: ${category.totalQuantity}',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Products in this category (using existing card layout)
-                ...category.products.map((product) {
-                  final isScanned = scannedState.isProductScanned(
-                    widget.order.id,
-                    product.barcode,
-                  );
-                  
-                  return Card(
-                    color: Colors.grey[850],
-                    elevation: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: SizedBox(
-                              width: 60,
-                              height: 60,
-                              // child: Image.network(
-                              //   product.image,
-                              //   fit: BoxFit.cover,
-                              //   loadingBuilder: (context, child, loadingProgress) {
-                              //     if (loadingProgress == null) return child;
-                              //     return const Center(child: CircularProgressIndicator(color: Colors.tealAccent));
-                              //   },
-                              //   errorBuilder: (context, error, stackTrace) {
-                              //     return const Center(child: Icon(Icons.error, color: Colors.redAccent));
-                              //   },
-                              // ),
-                            ),
-                          ),
-                          title: Text(product.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          subtitle: Text(
-                            "Barcode: ${product.barcode}\nQuantity: ${product.quantity}\nMax Stock: ${product.max}",
-                            style: TextStyle(color: Colors.grey[400]),
-                          ),
-                          tileColor: isScanned ? Colors.greenAccent.withOpacity(0.2) : null,
-                          trailing: isScanned
-                              ? const Icon(Icons.check_circle, color: Colors.greenAccent)
-                              : ElevatedButton(
-                                  onPressed: () => _scanBarcode(product),
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.black,
-                                    backgroundColor: Colors.tealAccent,
-                                  ),
-                                  child: const Text("Tara"),
-                                ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              SizedBox(
-                                width: 80,
-                                child: TextFormField(
-                                  initialValue: scannedState.hasBeenInitialized(widget.order.id, product.barcode) 
-                                    ? scannedState.getProductQuantity(widget.order.id, product.barcode).toString()
-                                    : '0',
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(color: Colors.white),
-                                  onChanged: (value) {
-                                    int? newValue = int.tryParse(value);
-                                    if (newValue != null) {
-                                      final clampedValue = newValue.clamp(0, product.max);
-                                      ref.read(scannedProductsProvider.notifier).updateQuantity(
-                                        widget.order.id,
-                                        product.barcode,
-                                        clampedValue,
-                                      );
-                                    }
-                                  },
-                                  decoration: InputDecoration(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                    filled: true,
-                                    fillColor: Colors.grey[800],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ],
-            )).toList(),
-            const SizedBox(height: 20),
-            if (allScanned) ...[
-              const Text("Tüm Barkodlar Tarandı", style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-              if (_imageFile != null)
-                Column(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        File(_imageFile!.path),
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: 200,
-                      ),
-                    ),
                     const SizedBox(height: 20),
                   ],
-                ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black, backgroundColor: Colors.tealAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                onPressed: _pickImage,
-                icon: const Icon(Icons.camera_alt),
-                label: Text(_imageFile == null ? "Fotoğraf Çek" : "Yeni Fotoğraf Çek"),
-              ),
-            ],
-            const SizedBox(height: 20),
-            Text('Sipariş Durumu: ${verbaliseStatus(_selectedOrderStatus)}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey[850],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: DropdownButton<int>(
-                value: _selectedOrderStatus,
-                isExpanded: true,
-                dropdownColor: Colors.grey[850],
-                style: const TextStyle(color: Colors.white),
-                underline: Container(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedOrderStatus = value!;
-                  });
-                },
-                items: const [
-                  DropdownMenuItem<int>(value: 0, child: Text('Onay Bekliyor')),
-                  DropdownMenuItem<int>(value: 1, child: Text('Siparişi Hazırlayınız')),
-                  DropdownMenuItem<int>(value: 2, child: Text('Depoda Hazırlanıyor')),
-                  DropdownMenuItem<int>(value: 3, child: Text('Tamamlandı')),
-                  DropdownMenuItem<int>(value: 4, child: Text('İptal Edildi')),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Ödeme Durumu: ${verbaliseOdemeDurumu(widget.order.odemDurum)}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            // Display product counts
-            Card(
-              color: Colors.grey[850],
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Product Counts:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    ..._productCounts.entries.map((entry) => 
-                      Text('${entry.key}: ${entry.value}', style: const TextStyle(color: Colors.white70))
+
+                  ..._getOrganizedProducts()
+                      .map((category) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Category header
+                              Container(
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      category.categoryName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Total: ${category.totalQuantity}',
+                                      style: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Products in this category (using existing card layout)
+                              ...category.products.map((product) {
+                                final isScanned = scannedState.isProductScanned(
+                                  widget.order.id,
+                                  product.barcode,
+                                );
+
+                                return Card(
+                                  color: Colors.grey[850],
+                                  elevation: 4,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  child: Column(
+                                    children: [
+                                      ListTile(
+                                        leading: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          child: SizedBox(
+                                            width: 60,
+                                            height: 60,
+                                            // child: Image.network(
+                                            //   product.image,
+                                            //   fit: BoxFit.cover,
+                                            //   loadingBuilder: (context, child, loadingProgress) {
+                                            //     if (loadingProgress == null) return child;
+                                            //     return const Center(child: CircularProgressIndicator(color: Colors.tealAccent));
+                                            //   },
+                                            //   errorBuilder: (context, error, stackTrace) {
+                                            //     return const Center(child: Icon(Icons.error, color: Colors.redAccent));
+                                            //   },
+                                            // ),
+                                          ),
+                                        ),
+                                        title: Text(product.name,
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold)),
+                                        subtitle: Text(
+                                          "Barcode: ${product.barcode}\nQuantity: ${product.quantity}\nMax Stock: ${product.max}",
+                                          style: TextStyle(
+                                              color: Colors.grey[400]),
+                                        ),
+                                        tileColor: isScanned
+                                            ? Colors.greenAccent
+                                                .withOpacity(0.2)
+                                            : null,
+                                        trailing: isScanned
+                                            ? const Icon(Icons.check_circle,
+                                                color: Colors.greenAccent)
+                                            : ElevatedButton(
+                                                onPressed: () =>
+                                                    _scanBarcode(product),
+                                                style: ElevatedButton.styleFrom(
+                                                  foregroundColor: Colors.black,
+                                                  backgroundColor:
+                                                      Colors.tealAccent,
+                                                ),
+                                                child: const Text("Tara"),
+                                              ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            SizedBox(
+                                              width: 80,
+                                              child: TextFormField(
+                                                initialValue: scannedState
+                                                        .hasBeenInitialized(
+                                                            widget.order.id,
+                                                            product.barcode)
+                                                    ? scannedState
+                                                        .getProductQuantity(
+                                                            widget.order.id,
+                                                            product.barcode)
+                                                        .toString()
+                                                    : '0',
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                    color: Colors.white),
+                                                onChanged: (value) {
+                                                  int? newValue =
+                                                      int.tryParse(value);
+                                                  if (newValue != null) {
+                                                    final clampedValue =
+                                                        newValue.clamp(
+                                                            0, product.max);
+                                                    ref
+                                                        .read(
+                                                            scannedProductsProvider
+                                                                .notifier)
+                                                        .updateQuantity(
+                                                          widget.order.id,
+                                                          product.barcode,
+                                                          clampedValue,
+                                                        );
+                                                  }
+                                                },
+                                                decoration: InputDecoration(
+                                                  contentPadding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8),
+                                                  border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8)),
+                                                  filled: true,
+                                                  fillColor: Colors.grey[800],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ],
+                          ))
+                      .toList(),
+                  const SizedBox(height: 20),
+                  if (allScanned) ...[
+                    const Text("Tüm Barkodlar Tarandı",
+                        style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 20),
+                    if (_imageFile != null)
+                      Column(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              File(_imageFile!.path),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: 200,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.black,
+                        backgroundColor: Colors.tealAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.camera_alt),
+                      label: Text(_imageFile == null
+                          ? "Fotoğraf Çek"
+                          : "Yeni Fotoğraf Çek"),
                     ),
                   ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-         
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white, backgroundColor: Colors.blueAccent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: _updateOrder,
-              child: const Text("Siparişi Güncelle", style: TextStyle(fontSize: 16)),
-            ),
-          ],
-        ) : Center(child: CircularProgressIndicator()),
+                  const SizedBox(height: 20),
+                  Text(
+                      'Sipariş Durumu: ${verbaliseStatus(_selectedOrderStatus)}',
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[850],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButton<int>(
+                      value: _selectedOrderStatus,
+                      isExpanded: true,
+                      dropdownColor: Colors.grey[850],
+                      style: const TextStyle(color: Colors.white),
+                      underline: Container(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedOrderStatus = value!;
+                        });
+                      },
+                      items: const [
+                        DropdownMenuItem<int>(
+                            value: 0, child: Text('Onay Bekliyor')),
+                        DropdownMenuItem<int>(
+                            value: 1, child: Text('Siparişi Hazırlayınız')),
+                        DropdownMenuItem<int>(
+                            value: 2, child: Text('Depoda Hazırlanıyor')),
+                        DropdownMenuItem<int>(
+                            value: 3, child: Text('Tamamlandı')),
+                        DropdownMenuItem<int>(
+                            value: 4, child: Text('İptal Edildi')),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                      'Ödeme Durumu: ${verbaliseOdemeDurumu(widget.order.odemDurum)}',
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 24),
+                  // Display product counts
+                  Card(
+                    color: Colors.grey[850],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Product Counts:',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          ..._productCounts.entries.map((entry) => Text(
+                              '${entry.key}: ${entry.value}',
+                              style: const TextStyle(color: Colors.white70))),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blueAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: _updateOrder,
+                    child: const Text("Siparişi Güncelle",
+                        style: TextStyle(fontSize: 16)),
+                  ),
+                ],
+              )
+            : Center(child: CircularProgressIndicator()),
       ),
     );
-}
+  }
 
-String verbaliseStatus(int status) {
-  switch (status) {
-    case 0: return 'Onay Bekliyor';
-    case 1: return 'Siparişi Hazırlayınız';
-    case 2: return 'Depoda Hazırlanıyor';
-    case 3: return 'Tamamlandı';
-    case 4: return 'İptal Edildi';
-    default: return 'Bilinmeyen Durum';
+  String verbaliseStatus(int status) {
+    switch (status) {
+      case 0:
+        return 'Onay Bekliyor';
+      case 1:
+        return 'Siparişi Hazırlayınız';
+      case 2:
+        return 'Depoda Hazırlanıyor';
+      case 3:
+        return 'Tamamlandı';
+      case 4:
+        return 'İptal Edildi';
+      default:
+        return 'Bilinmeyen Durum';
+    }
+  }
+
+  String verbaliseOdemeDurumu(int status) {
+    switch (status) {
+      case 0:
+        return 'Bekliyor';
+      case 1:
+        return 'Ödendi';
+      case 2:
+        return 'Tamamlandı';
+      default:
+        return 'Bilinmeyen Durum';
+    }
   }
 }
-
-String verbaliseOdemeDurumu(int status) {
-  switch (status) {
-    case 0: return 'Bekliyor';
-    case 1: return 'Ödendi';
-    case 2: return 'Tamamlandı';
-    default: return 'Bilinmeyen Durum';
-  }
-}}

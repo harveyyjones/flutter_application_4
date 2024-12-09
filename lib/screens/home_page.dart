@@ -5,9 +5,8 @@ import 'package:flutter_application_4/business_logic.dart/services/auth_service.
 import 'package:flutter_application_4/business_logic.dart/services/service_for_orders.dart';
 import 'package:flutter_application_4/screens/login_page.dart';
 import 'package:flutter_application_4/screens/order_detail_page.dart';
-import 'package:flutter_application_4/screens/bs_orders.dart';
+import 'package:flutter_application_4/screens/web_orders_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,8 +23,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _errorMessage;
   final OrderService _orderService = OrderService();
 
-  
-   final List<Widget> _pages= [const HomeScreen(),];
+  final List<Widget> _pages = [
+    const HomeScreen(),
+  ];
 
   int? _selectedOrderStatus;
   int? _selectedPaymentStatus;
@@ -64,17 +64,20 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final orders = await _orderService.fetchOrders();
       print('Fetched ${orders.length} orders'); // Debug print
-      if (mounted) { // Check if the widget is still mounted
+      if (mounted) {
+        // Check if the widget is still mounted
         setState(() {
           _orders = orders;
           _filteredOrders = orders;
           _isLoading = false;
         });
       }
-      print('Updated state with ${_filteredOrders.length} filtered orders'); // Debug print
+      print(
+          'Updated state with ${_filteredOrders.length} filtered orders'); // Debug print
     } catch (e) {
       print('Error loading orders: $e'); // Debug print
-      if (mounted) { // Check if the widget is still mounted
+      if (mounted) {
+        // Check if the widget is still mounted
         setState(() {
           _isLoading = false;
           _errorMessage = 'Error loading orders: $e';
@@ -86,8 +89,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _applyFilters() {
     setState(() {
       _filteredOrders = _orders.where((order) {
-        bool matchesOrderStatus = _selectedOrderStatus == null || order.sipDurum == _selectedOrderStatus;
-        bool matchesPaymentStatus = _selectedPaymentStatus == null || order.odemDurum == _selectedPaymentStatus;
+        bool matchesOrderStatus = _selectedOrderStatus == null ||
+            order.sipDurum == _selectedOrderStatus;
+        bool matchesPaymentStatus = _selectedPaymentStatus == null ||
+            order.odemDurum == _selectedPaymentStatus;
         return matchesOrderStatus && matchesPaymentStatus;
       }).toList();
     });
@@ -96,7 +101,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void logOut() {
     // Implement your logout logic here
     AuthService().logout();
-    Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => LoginPage()));
     print('User logged out'); // Placeholder for actual logout logic
   }
 
@@ -136,7 +142,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (_errorMessage != null) {
       return Center(
-        child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)),
+        child:
+            Text(_errorMessage!, style: const TextStyle(color: Colors.white)),
       );
     }
 
@@ -145,7 +152,8 @@ class _HomeScreenState extends State<HomeScreen> {
         if (_userName != null)
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text('Welcome, $_userName!', style: TextStyle(color: Colors.white, fontSize: 20)),
+            child: Text('Welcome, $_userName!',
+                style: TextStyle(color: Colors.white, fontSize: 20)),
           ),
         Padding(
           padding: const EdgeInsets.all(16.0),
@@ -159,7 +167,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: DropdownButton<int>(
                   value: _selectedOrderStatus,
-                  hint: const Text('Order Status', style: TextStyle(color: Colors.white70)),
+                  hint: const Text('Order Status',
+                      style: TextStyle(color: Colors.white70)),
                   isExpanded: true,
                   dropdownColor: Colors.grey[850],
                   style: const TextStyle(color: Colors.white),
@@ -171,11 +180,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   items: const [
                     DropdownMenuItem<int>(value: null, child: Text('All')),
-                    DropdownMenuItem<int>(value: 0, child: Text('Onay Bekliyor')),
-                    DropdownMenuItem<int>(value: 1, child: Text('Siparişi Hazırlayınız')),
-                    DropdownMenuItem<int>(value: 2, child: Text('Depoda Hazırlanıyor')),
+                    DropdownMenuItem<int>(
+                        value: 0, child: Text('Onay Bekliyor')),
+                    DropdownMenuItem<int>(
+                        value: 1, child: Text('Siparişi Hazırlayınız')),
+                    DropdownMenuItem<int>(
+                        value: 2, child: Text('Depoda Hazırlanıyor')),
                     DropdownMenuItem<int>(value: 3, child: Text('Tamamlandı')),
-                    DropdownMenuItem<int>(value: 4, child: Text('Iptal Edildi')),
+                    DropdownMenuItem<int>(
+                        value: 4, child: Text('Iptal Edildi')),
                   ],
                 ),
               ),
@@ -188,7 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: DropdownButton<int>(
                   value: _selectedPaymentStatus,
-                  hint: const Text('Payment Status', style: TextStyle(color: Colors.white70)),
+                  hint: const Text('Payment Status',
+                      style: TextStyle(color: Colors.white70)),
                   isExpanded: true,
                   dropdownColor: Colors.grey[850],
                   style: const TextStyle(color: Colors.white),
@@ -208,33 +222,44 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onLongPress: () => Navigator.push(context, MaterialPageRoute(builder: (context) => BaselinkerPage())),
+                onLongPress: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => BaselinkerPage())),
                 onPressed: _applyFilters,
                 style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black, backgroundColor: Colors.tealAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.tealAccent,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Filtreyi Uygula', style: TextStyle(fontSize: 16)),
+                child: const Text('Filtreyi Uygula',
+                    style: TextStyle(fontSize: 16)),
               ),
             ],
           ),
         ),
         Expanded(
           child: _filteredOrders.isEmpty
-              ? const Center(child: Text('No orders found', style: TextStyle(color: Colors.white)))
+              ? const Center(
+                  child: Text('No orders found',
+                      style: TextStyle(color: Colors.white)))
               : ListView.builder(
                   itemCount: _filteredOrders.length,
                   itemBuilder: (context, index) {
                     final order = _filteredOrders[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       color: Colors.grey[850],
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(16),
                         title: Text('Order #${order.id}',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold)),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -245,11 +270,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             //     style: TextStyle(color: Colors.grey[400])),
                             Text('Items: ${order.cart.length}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Payment Status: ${verbaliseOdemeDurumu(order.odemDurum)}',
+                            Text(
+                                'Payment Status: ${verbaliseOdemeDurumu(order.odemDurum)}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Order User: ${verbaliseOrdererName(order.userId)}',
+                            Text(
+                                'Order User: ${verbaliseOrdererName(order.userId)}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Order Status: ${verbaliseStatus(order.sipDurum)}',
+                            Text(
+                                'Order Status: ${verbaliseStatus(order.sipDurum)}',
                                 style: TextStyle(color: Colors.grey[400])),
                           ],
                         ),
@@ -257,11 +285,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => OrderDetailsScreen(order: order),
+                              builder: (context) =>
+                                  OrderDetailsScreen(order: order),
                             ),
                           );
                         },
-                        trailing: const Icon(Icons.arrow_forward_ios, color: Colors.tealAccent),
+                        trailing: const Icon(Icons.arrow_forward_ios,
+                            color: Colors.tealAccent),
                       ),
                     );
                   },
@@ -351,7 +381,6 @@ String verbaliseOdemeDurumu(int status) {
 }
 
 String verbaliseOrdererName(int id) {
-
   switch (id) {
     case 2003:
       return 'WÓLKA - HDM';

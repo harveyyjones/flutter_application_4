@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'screens/splash_screen.dart';  // Add this import
-import 'package:flutter_riverpod/flutter_riverpod.dart';  // Add this import
+import 'package:flutter_application_4/screens/splash_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Add this import
 
 void main() {
   runApp(
-    ProviderScope(  // Wrap MyApp with ProviderScope
+    ProviderScope(
+      // Wrap MyApp with ProviderScope
       child: MyApp(),
     ),
   );
@@ -18,8 +19,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: SplashScreen(),  // Use the SplashScreen widget
+      home: SplashScreen(), // Use the SplashScreen widget
     );
   }
-}       
-
+}

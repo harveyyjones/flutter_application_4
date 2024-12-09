@@ -1,12 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_4/business_logic.dart/models%20baselinker/orders_model_baselinker.dart';
-import 'package:flutter_application_4/business_logic.dart/models/order_model.dart';
-import 'package:flutter_application_4/business_logic.dart/services%20for%20baselinker/baselinker_order_service.dart';
-import 'package:flutter_application_4/business_logic.dart/services/service_for_orders.dart';
-import 'package:flutter_application_4/screens/bs_order_details.dart';
-import 'package:flutter_application_4/screens/order_detail_page.dart';
-
+import 'package:flutter_application_4/business_logic.dart/models%20web/orders_model_web.dart';
+import 'package:flutter_application_4/business_logic.dart/services%20for%20web/web_order_service.dart';
+import 'package:flutter_application_4/screens/web_order_details_details_screen.dart';
 
 class BaselinkerPage extends StatefulWidget {
   const BaselinkerPage({super.key});
@@ -16,22 +12,18 @@ class BaselinkerPage extends StatefulWidget {
 }
 
 class _BaselinkerPageState extends State<BaselinkerPage> {
-  List<BaselinkerOrder> _orders = []; // Changed type to BaselinkerOrder
-  List<BaselinkerOrder> _filteredOrders = []; // Changed type to BaselinkerOrder
+  List<WebOrder> _orders = []; // Changed type to BaselinkerOrder
+  List<WebOrder> _filteredOrders = []; // Changed type to BaselinkerOrder
   bool _isLoading = true;
   String? _errorMessage;
-  final BaselinkerOrderService _orderService = BaselinkerOrderService();
-    Map<String, int> _productCounts = {}; // New field for product counts
-      List<BaselinkerBasketItem> _products = [];    
+  final WebOrderService _orderService = WebOrderService();
+  final Map<String, int> _productCounts = {}; // New field for product counts
+  List<WebOrderBasketItemForOrders> _products = [];
 
-
-
-  
   //  final List<Widget> _pages= [const HomeScreen(),];
 
   int? _selectedOrderStatus;
   String? _selectedPaymentStatus; // Changed to String to match payment_id
-  int _currentIndex = 0;
 
   late Timer _timer; // Keep this if you plan to use it
 
@@ -57,7 +49,8 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
     });
 
     try {
-      final orders = await _orderService.fetchOrders(); // Removed cast to List<Order>
+      final orders =
+          await _orderService.fetchOrders(); // Removed cast to List<Order>
       print('Fetched ${orders.length} orders'); // Debug print
 
       setState(() {
@@ -65,7 +58,8 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
         _filteredOrders = orders;
         _isLoading = false;
       });
-      print('Updated state with ${_filteredOrders.length} filtered orders'); // Debug print
+      print(
+          'Updated state with ${_filteredOrders.length} filtered orders'); // Debug print
     } catch (e) {
       print('Error loading orders: $e'); // Debug print
       setState(() {
@@ -78,25 +72,22 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
   void _applyFilters() {
     setState(() {
       _filteredOrders = _orders.where((order) {
-        bool matchesOrderStatus = _selectedOrderStatus == null || order.orderStatus == _selectedOrderStatus;
-        bool matchesPaymentStatus = _selectedPaymentStatus == null || order.paymentId == _selectedPaymentStatus;
+        bool matchesOrderStatus = _selectedOrderStatus == null ||
+            order.orderStatus == _selectedOrderStatus;
+        bool matchesPaymentStatus = _selectedPaymentStatus == null ||
+            order.paymentId == _selectedPaymentStatus;
         return matchesOrderStatus && matchesPaymentStatus;
       }).toList();
     });
   }
-
-  
-
- 
-
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[900],
       appBar: AppBar(
-        title: const Text('Web Toptan Siparişleri', style: TextStyle(color: Colors.white)),
+        title: const Text('Web Toptan Siparişleri',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         elevation: 0,
         actions: [
@@ -104,9 +95,7 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
               _loadOrders();
-              setState(() {
-                
-              });
+              setState(() {});
             }, // Call the _loadOrders method to refresh
           ),
         ],
@@ -125,7 +114,8 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
 
     if (_errorMessage != null) {
       return Center(
-        child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)),
+        child:
+            Text(_errorMessage!, style: const TextStyle(color: Colors.white)),
       );
     }
 
@@ -143,7 +133,8 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                 ),
                 child: DropdownButton<int>(
                   value: _selectedOrderStatus,
-                  hint: const Text('Order Status', style: TextStyle(color: Colors.white70)),
+                  hint: const Text('Order Status',
+                      style: TextStyle(color: Colors.white70)),
                   isExpanded: true,
                   dropdownColor: Colors.grey[850],
                   style: const TextStyle(color: Colors.white),
@@ -155,15 +146,23 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                   },
                   items: const [
                     DropdownMenuItem<int>(value: null, child: Text('All')),
-                    DropdownMenuItem<int>(value: 0, child: Text('Onay Bekliyor')),
-                    DropdownMenuItem<int>(value: 1, child: Text('Siparişi Hazırlayınız')),
-                    DropdownMenuItem<int>(value: 2, child: Text('Kargoya Verilecek')),
-                    DropdownMenuItem<int>(value: 3, child: Text('Kargoya Verildi')),
+                    DropdownMenuItem<int>(
+                        value: 0, child: Text('Onay Bekliyor')),
+                    DropdownMenuItem<int>(
+                        value: 1, child: Text('Siparişi Hazırlayınız')),
+                    DropdownMenuItem<int>(
+                        value: 2, child: Text('Kargoya Verilecek')),
+                    DropdownMenuItem<int>(
+                        value: 3, child: Text('Kargoya Verildi')),
                     DropdownMenuItem<int>(value: 4, child: Text('Tamamlandı')),
-                    DropdownMenuItem<int>(value: 5, child: Text('Müşteri Alacak')),
-                    DropdownMenuItem<int>(value: 6, child: Text('Müşteri Teslim Aldı')),
-                    DropdownMenuItem<int>(value: 7, child: Text('Ödeme Bekleniyor')),
-                    DropdownMenuItem<int>(value: -1, child: Text('Sipariş Iptal')),
+                    DropdownMenuItem<int>(
+                        value: 5, child: Text('Müşteri Alacak')),
+                    DropdownMenuItem<int>(
+                        value: 6, child: Text('Müşteri Teslim Aldı')),
+                    DropdownMenuItem<int>(
+                        value: 7, child: Text('Ödeme Bekleniyor')),
+                    DropdownMenuItem<int>(
+                        value: -1, child: Text('Sipariş Iptal')),
                   ],
                 ),
               ),
@@ -176,7 +175,8 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                 ),
                 child: DropdownButton<String>(
                   value: _selectedPaymentStatus,
-                  hint: const Text('Payment Status', style: TextStyle(color: Colors.white70)),
+                  hint: const Text('Payment Status',
+                      style: TextStyle(color: Colors.white70)),
                   isExpanded: true,
                   dropdownColor: Colors.grey[850],
                   style: const TextStyle(color: Colors.white),
@@ -188,8 +188,11 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                   },
                   items: const [
                     DropdownMenuItem<String>(value: null, child: Text('All')),
-                    DropdownMenuItem<String>(value: "Kapıda Ödeme", child: Text('Kapıda Ödeme')),
-                    DropdownMenuItem<String>(value: "Banka Transferi", child: Text('Banka Transferi')),
+                    DropdownMenuItem<String>(
+                        value: "Kapıda Ödeme", child: Text('Kapıda Ödeme')),
+                    DropdownMenuItem<String>(
+                        value: "Banka Transferi",
+                        child: Text('Banka Transferi')),
                   ],
                 ),
               ),
@@ -197,30 +200,40 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
               ElevatedButton(
                 onPressed: _applyFilters,
                 style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black, backgroundColor: Colors.tealAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.tealAccent,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Filtreyi Uygula', style: TextStyle(fontSize: 16)),
+                child: const Text('Filtreyi Uygula',
+                    style: TextStyle(fontSize: 16)),
               ),
             ],
           ),
         ),
         Expanded(
           child: _filteredOrders.isEmpty
-              ? const Center(child: Text('No orders found', style: TextStyle(color: Colors.white)))
+              ? const Center(
+                  child: Text('No orders found',
+                      style: TextStyle(color: Colors.white)))
               : ListView.builder(
                   itemCount: _filteredOrders.length,
                   itemBuilder: (context, index) {
                     final order = _filteredOrders[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       color: Colors.grey[850],
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(16),
                         title: Text('Order #${order.id}',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold)),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -229,9 +242,16 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                                 style: TextStyle(color: Colors.grey[400])),
                             Text('Items: ${order.baskets.length}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Status: ${verbaliseStatus(order.orderStatus)}',
+                            Text(
+                                'Siparis durumu: ${verbaliseStatus(order.orderStatus)}',
                                 style: TextStyle(color: Colors.grey[400])),
-                            Text('Payment: ${order.paymentId}',
+                            Text('Odeme durumu: ${order.paymentId}',
+                                style: TextStyle(color: Colors.grey[400])),
+                            Text(
+                                'USTLENEN DEPO SORUMLUSU: ${verbaliseDepoSorumlusu(order.depoUserId)}',
+                                style: TextStyle(color: Colors.grey[400])),
+                            Text(
+                                'Bu siparis ${getTimeAgo(order.updatedAt.toString().toLowerCase())} guncellendi.',
                                 style: TextStyle(color: Colors.grey[400])),
                             // Add more fields as needed
                           ],
@@ -240,11 +260,13 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => BaselinkerOrderDetailsScreen(order: order),
+                              builder: (context) =>
+                                  WebOrderDetailsScreen(order: order),
                             ),
                           );
                         },
-                        trailing: const Icon(Icons.arrow_forward_ios, color: Colors.tealAccent),
+                        trailing: const Icon(Icons.arrow_forward_ios,
+                            color: Colors.tealAccent),
                       ),
                     );
                   },
@@ -253,54 +275,6 @@ class _BaselinkerPageState extends State<BaselinkerPage> {
       ],
     );
   }
-
-  // Widget buildBottomNavigationBar() {
-  //   return Container(
-  //     decoration: BoxDecoration(
-  //       color: Colors.grey[850],
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.black.withOpacity(0.2),
-  //           blurRadius: 8,
-  //           offset: const Offset(0, -2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: BottomNavigationBar(
-  //       currentIndex: _currentIndex,
-  //       onTap: (index) {
-  //         Navigator.push(
-  //           context,
-  //           MaterialPageRoute(builder: (context) => _pages[index]),
-  //         );
-  //         setState(() {
-  //           _currentIndex = index;
-  //         });
-  //       },
-  //       backgroundColor: Colors.transparent,
-  //       elevation: 0,
-  //       selectedItemColor: Colors.tealAccent,
-  //       unselectedItemColor: Colors.grey[400],
-  //       items: const [
-  //         BottomNavigationBarItem(
-  //           icon: Icon(Icons.shopping_cart_outlined),
-  //           activeIcon: Icon(Icons.shopping_cart),
-  //           label: 'Orders',
-  //         ),
-  //         BottomNavigationBarItem(
-  //           icon: Icon(Icons.home_outlined),
-  //           activeIcon: Icon(Icons.home),
-  //           label: 'Orders',
-  //         ),
-  //         BottomNavigationBarItem(
-  //           icon: Icon(Icons.person_outline),
-  //           activeIcon: Icon(Icons.person),
-  //           label: 'Profile',
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 }
 
 String verbaliseStatus(int status) {
@@ -338,5 +312,42 @@ String verbaliseOdemeDurumu(int status) {
       return 'Tamamlandı';
     default:
       return 'Bilinmeyen Durum';
+  }
+}
+
+String verbaliseDepoSorumlusu(int depoUserId) {
+  switch (depoUserId) {
+    case null:
+      return 'Henuz kimse ustlenmedi.';
+    case 1055:
+      return 'Mehmet Ali';
+
+    default:
+      return 'Bilinmeyen Durum';
+  }
+}
+
+String getTimeAgo(String timestamp) {
+  try {
+    final DateTime updateTime = DateTime.parse(timestamp);
+    final Duration difference = DateTime.now().difference(updateTime);
+
+    if (difference.inDays > 365) {
+      final years = (difference.inDays / 365).floor();
+      return '$years ${years == 1 ? 'yıl' : 'yıl'} önce';
+    } else if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return '$months ${months == 1 ? 'ay' : 'ay'} önce';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'gün' : 'gün'} önce';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'saat' : 'saat'} önce';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'dakika' : 'dakika'} önce';
+    } else {
+      return 'şimdi';
+    }
+  } catch (e) {
+    return 'invalid date';
   }
 }

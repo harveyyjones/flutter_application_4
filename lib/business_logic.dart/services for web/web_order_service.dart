@@ -1,12 +1,13 @@
 import 'dart:convert';
-import 'package:flutter_application_4/business_logic.dart/models%20baselinker/orders_model_baselinker.dart';
+import 'package:flutter_application_4/business_logic.dart/models%20web/orders_model_web.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-class BaselinkerOrderService {
-  static const String _baseUrl = 'https://gardeniakosmetyka.com/api/v1/corder/getCorders';
+class WebOrderService {
+  static const String _baseUrl =
+      'https://gardeniakosmetyka.com/api/v1/corder/getCorders';
 
-  Future<List<BaselinkerOrder>> fetchOrders() async {
+  Future<List<WebOrder>> fetchOrders() async {
     try {
       final token = await _getAuthToken();
       final response = await _makeAuthenticatedRequest(token);
@@ -40,11 +41,11 @@ class BaselinkerOrderService {
     return response;
   }
 
-  List<BaselinkerOrder> _parseOrdersResponse(http.Response response) {
+  List<WebOrder> _parseOrdersResponse(http.Response response) {
     try {
       final List<dynamic> jsonResponse = json.decode(response.body);
       print('Decoded JSON: $jsonResponse'); // Debug print
-      return jsonResponse.map((json) => BaselinkerOrder.fromJson(json)).toList();
+      return jsonResponse.map((json) => WebOrder.fromJson(json)).toList();
     } catch (e) {
       print('Error parsing orders: $e'); // Debug print
       throw Exception('Failed to parse orders: ${e.toString()}');

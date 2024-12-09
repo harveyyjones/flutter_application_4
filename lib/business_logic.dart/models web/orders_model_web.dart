@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-class BaselinkerOrder {
+class WebOrder {
   final int id;
   final String currency;
   final String token;
@@ -9,7 +9,7 @@ class BaselinkerOrder {
   final int musteriId;
   final int adresId;
   final String basketId;
-  final List<BaselinkerBasketItem> baskets;
+  final List<WebOrderBasketItemForOrders> baskets;
   final int orderStatus;
   final int stockStatus;
   final String? cargoFirma;
@@ -21,7 +21,7 @@ class BaselinkerOrder {
   final String? notes;
   // final String? cargoTutari;
 
-  BaselinkerOrder({
+  WebOrder({
     required this.id,
     required this.currency,
     required this.token,
@@ -43,8 +43,8 @@ class BaselinkerOrder {
     // this.cargoTutari,
   });
 
-  factory BaselinkerOrder.fromJson(Map<String, dynamic> json) {
-    return BaselinkerOrder(
+  factory WebOrder.fromJson(Map<String, dynamic> json) {
+    return WebOrder(
       id: _parseInt(json['id']),
       currency: json['currency']?.toString() ?? '',
       token: json['token']?.toString() ?? '',
@@ -58,8 +58,10 @@ class BaselinkerOrder {
       stockStatus: _parseInt(json['stock_status']),
       cargoFirma: json['cargo_firma']?.toString(),
       cargoTakipNo: json['cargo_takip_no']?.toString(),
-      createdAt: DateTime.parse(json['created_at']?.toString() ?? DateTime.now().toString()),
-      updatedAt: DateTime.parse(json['updated_at']?.toString() ?? DateTime.now().toString()),
+      createdAt: DateTime.parse(
+          json['created_at']?.toString() ?? DateTime.now().toString()),
+      updatedAt: DateTime.parse(
+          json['updated_at']?.toString() ?? DateTime.now().toString()),
       depoUserId: _parseInt(json['depo_user_id']),
       currentId: _parseInt(json['current_id']),
       notes: json['notes']?.toString(),
@@ -69,61 +71,64 @@ class BaselinkerOrder {
 
   static int _parseInt(dynamic value) {
     if (value == null) return 0;
-    
+
     // If it's already an integer, return it
     if (value is int) return value;
-    
+
     // If it's a double, truncate decimal part
     if (value is double) return value.truncate();
-    
+
     // If it's a string, handle potential decimal values
     if (value is String) {
       // Split by decimal point and take only the integer part
       String integerPart = value.split('.')[0];
       return int.tryParse(integerPart) ?? 0;
     }
-    
-    return 0;  // Default return if none of the above work
+
+    return 0; // Default return if none of the above work
   }
 
-  static List<BaselinkerBasketItem> _parseBaskets(dynamic basketsJson) {
+  static List<WebOrderBasketItemForOrders> _parseBaskets(dynamic basketsJson) {
     if (basketsJson is String) {
       List<dynamic> basketsList = jsonDecode(basketsJson);
-      return basketsList.map((item) => BaselinkerBasketItem.fromJson(item)).toList();
+      return basketsList
+          .map((item) => WebOrderBasketItemForOrders.fromJson(item))
+          .toList();
     } else if (basketsJson is List) {
-      return basketsJson.map((item) => BaselinkerBasketItem.fromJson(item)).toList();
+      return basketsJson
+          .map((item) => WebOrderBasketItemForOrders.fromJson(item))
+          .toList();
     }
     return [];
   }
 }
 
-class BaselinkerBasketItem {
+class WebOrderBasketItemForOrders {
   final int id;
   final String name;
   final String barcode;
   final String categoryName;
   final String qty;
-  // final dynamic salePrice;
   final String image;
+  bool isScanned;
 
-  BaselinkerBasketItem({
+  WebOrderBasketItemForOrders({
     required this.id,
     required this.name,
     required this.barcode,
     required this.categoryName,
     required this.qty,
-    // required this.salePrice,
     required this.image,
+    this.isScanned = false,
   });
 
-  factory BaselinkerBasketItem.fromJson(Map<String, dynamic> json) {
-    return BaselinkerBasketItem(
+  factory WebOrderBasketItemForOrders.fromJson(Map<String, dynamic> json) {
+    return WebOrderBasketItemForOrders(
       id: int.parse(json['id'].toString()),
       name: json['name'].toString(),
       barcode: json['barcode'].toString(),
       categoryName: json['category_name'].toString(),
       qty: json['qty'].toString(),
-      // salePrice: json['sale_price'],
       image: json['image'].toString(),
     );
   }

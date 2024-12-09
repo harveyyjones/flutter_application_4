@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-class BaselinkerOrderDetails {
+class WebOrderDetails {
   final int id;
   final String currency;
   final String token;
@@ -9,7 +9,7 @@ class BaselinkerOrderDetails {
   final int musteriId;
   final int adresId;
   final String basketId;
-  final List<BasketItem> baskets;
+  final List<WebOrderBasketItemForDetails> baskets;
   final int orderStatus;
   final int stockStatus;
   final String? cargoFirma;
@@ -25,7 +25,7 @@ class BaselinkerOrderDetails {
   final String depoUserAd;
   final Address adres;
 
-  BaselinkerOrderDetails({
+  WebOrderDetails({
     required this.id,
     required this.currency,
     required this.token,
@@ -51,9 +51,10 @@ class BaselinkerOrderDetails {
     required this.adres,
   });
 
-  factory BaselinkerOrderDetails.fromJson(Map<String, dynamic> json) {
-    print('Parsing BaselinkerOrderDetails from JSON: $json'); // Added debug print
-    return BaselinkerOrderDetails(
+  factory WebOrderDetails.fromJson(Map<String, dynamic> json) {
+    print(
+        'Parsing BaselinkerOrderDetails from JSON: $json'); // Added debug print
+    return WebOrderDetails(
       id: json['id'] ?? 0,
       currency: json['currency'] ?? '',
       token: json['token'] ?? '',
@@ -67,8 +68,10 @@ class BaselinkerOrderDetails {
       stockStatus: json['stock_status'] ?? 0,
       cargoFirma: json['cargo_firma'] ?? '',
       cargoTakipNo: json['cargo_takip_no'] ?? '',
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toString()),
-      updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toString()),
+      createdAt:
+          DateTime.parse(json['created_at'] ?? DateTime.now().toString()),
+      updatedAt:
+          DateTime.parse(json['updated_at'] ?? DateTime.now().toString()),
       depoUserId: json['depo_user_id'] ?? 0,
       currentId: json['current_id'] ?? 0,
       notes: json['notes'] ?? '',
@@ -80,9 +83,11 @@ class BaselinkerOrderDetails {
     );
   }
 
-  static List<BasketItem> _parseBaskets(String basketsJson) {
+  static List<WebOrderBasketItemForDetails> _parseBaskets(String basketsJson) {
     List<dynamic> basketsList = jsonDecode(basketsJson);
-    return basketsList.map((item) => BasketItem.fromJson(item)).toList();
+    return basketsList
+        .map((item) => WebOrderBasketItemForDetails.fromJson(item))
+        .toList();
   }
 }
 
@@ -139,13 +144,15 @@ class Address {
       sokak: json['sokak'] ?? '',
       vNumarasi: json['v_numarasi'],
       firmaAdi: json['firma_adi'],
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toString()),
-      updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toString()),
+      createdAt:
+          DateTime.parse(json['created_at'] ?? DateTime.now().toString()),
+      updatedAt:
+          DateTime.parse(json['updated_at'] ?? DateTime.now().toString()),
     );
   }
 }
 
-class BasketItem {
+class WebOrderBasketItemForDetails {
   final int id;
   final String name;
   final String barcode;
@@ -154,10 +161,9 @@ class BasketItem {
   final double salePrice;
   final double price;
   final String image;
-
   bool isScanned = false;
 
-  BasketItem({
+  WebOrderBasketItemForDetails({
     required this.id,
     required this.name,
     required this.barcode,
@@ -169,15 +175,17 @@ class BasketItem {
     this.isScanned = false, // Added default value
   });
 
-  factory BasketItem.fromJson(Map<String, dynamic> json) {
-    return BasketItem(
+  factory WebOrderBasketItemForDetails.fromJson(Map<String, dynamic> json) {
+    return WebOrderBasketItemForDetails(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       barcode: json['barcode'] ?? '',
       categoryName: json['category_name'] ?? '',
-      qty: int.tryParse(json['qty'].toString()) ?? 0,  // Updated to parse as int
-      salePrice: double.tryParse(json['sale_price'].toString()) ?? 0.0,  // Updated to parse as double
-      price: double.tryParse(json['price'].toString()) ?? 0.0,  // Added parsing for price
+      qty: int.tryParse(json['qty'].toString()) ?? 0, // Updated to parse as int
+      salePrice: double.tryParse(json['sale_price'].toString()) ??
+          0.0, // Updated to parse as double
+      price: double.tryParse(json['price'].toString()) ??
+          0.0, // Added parsing for price
       image: json['image'] ?? '',
     );
   }
